@@ -18,7 +18,7 @@
     <div class="participant-card h-100">
       <div class="d-flex align-items-start justify-content-between mb-2">
         <div>
-          <div class="p-name">{{ p.name }}</div>
+          <div class="p-name" {% if p.name == 'Martin Durchov' %}title="🕵️ Man of Mystery — paid £10.39" style="cursor:help"{% endif %}{% if p.name == 'Alex Wood' %}title="🎰 High Roller — 5 entries!" style="cursor:help"{% endif %}>{{ p.name }}{% if p.name == 'Martin Durchov' %} <span style="font-size:.65rem;color:var(--text-dim)">🕵️</span>{% endif %}{% if p.name == 'Alex Wood' %} <span style="font-size:.65rem;color:var(--gold)">🎰</span>{% endif %}</div>
           <div class="p-entries">
             {{ (p.entry_fee_paid / 5) | int }} entr{{ 'y' if (p.entry_fee_paid / 5) | int == 1 else 'ies' }}
             &middot; £{{ p.entry_fee_paid | int }}

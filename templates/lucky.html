@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}The Oracle – WC 2026{% endblock %}
+
+{% block content %}
+<div style="min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+  <div style="font-size:4rem;margin-bottom:1rem;animation:mysteryPulse 2s infinite">🔮</div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.2em;color:var(--text-muted);margin-bottom:.5rem">THE ORACLE SPEAKS</div>
+  {% if lucky %}
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,8vw,5rem);line-height:1;background:linear-gradient(135deg,#fff 30%,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.5rem">
+    {{ lucky.name }}
+  </div>
+  <div style="color:var(--text-muted);font-size:.9rem;margin-bottom:2rem">
+    …shall win the sweepstakes. Probably. Maybe. Don't quote us.
+  </div>
+  <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
+    {% for t in lucky.teams %}
+    <span class="team-pill"><span class="tla">{{ t.code }}</span> {{ t.name }}</span>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="color:var(--text-muted)">The oracle sees nothing… yet. Run the draw first.</div>
+  {% endif %}
+  <div class="d-flex gap-3 mt-3">
+    <a href="{{ url_for('lucky') }}" class="btn btn-gold">Ask Again</a>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Back to Reality</a>
+  </div>
+  <div style="margin-top:3rem;font-size:.72rem;color:var(--text-dim)">
+    This prediction is powered by advanced AI (Math.random). Past performance is not indicative of future results.
+    Not financial advice. Do not bet your house on this.
+  </div>
+</div>
+{% endblock %}

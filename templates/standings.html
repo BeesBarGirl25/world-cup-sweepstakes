@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Standings – WC 2026{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h4 mb-0"><i class="bi bi-table me-2" style="color:var(--gold)"></i>Tournament Standings</h1>
+</div>
+
+<!-- Group stage tables -->
+<div class="section-title"><i class="bi bi-grid me-1"></i>Group Stage</div>
+{% if group_tables %}
+<div class="row g-3 mb-5 stagger">
+  {% for group_name, rows in group_tables | dictsort %}
+  <div class="col-sm-6 col-xl-4">
+    <div class="card">
+      <div class="card-header gold" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em">
+        Group {{ group_name }}
+      </div>
+      <div class="p-0">
+        <table class="table table-sm mb-0" style="color:var(--text);font-size:.82rem">
+          <thead>
+            <tr style="color:var(--text-muted);font-size:.7rem">
+              <th class="ps-3" style="width:40%">Team</th>
+              <th class="text-center">P</th>
+              <th class="text-center">W</th>
+              <th class="text-center">D</th>
+              <th class="text-center">L</th>
+              <th class="text-center">GD</th>
+              <th class="text-center pe-3">Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr style="border-bottom:1px solid var(--border);{% if loop.index <= 2 %}background:rgba(0,214,143,.04){% endif %}">
+              <td class="ps-3 py-2">
+                <span class="fw-semibold">{{ row.team.name }}</span>
+                {% if row.team.eliminated %}<span class="badge ms-1" style="font-size:.58rem;background:var(--red-dim);color:var(--red)">out</span>{% endif %}
+                {% if loop.index <= 2 and row.P > 0 %}<span class="ms-1" style="font-size:.65rem;color:var(--green)">↑</span>{% endif %}
+              </td>
+              <td class="text-center">{{ row.P }}</td>
+              <td class="text-center">{{ row.W }}</td>
+              <td class="text-center">{{ row.D }}</td>
+              <td class="text-center">{{ row.L }}</td>
+              <td class="text-center" style="color:{% if row.GD > 0 %}var(--green){% elif row.GD < 0 %}var(--red){% else %}var(--text-muted){% endif %}">
+                {{ '+' if row.GD > 0 else '' }}{{ row.GD }}
+              </td>
+              <td class="text-center pe-3 fw-bold" style="color:var(--gold)">{{ row.Pts }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info mb-4">
+  No group stage results yet. <a href="{{ url_for('results') }}" style="color:inherit">Add results →</a>
+</div>
+{% endif %}
+
+<!-- Knockout bracket -->
+{% if knockout_by_stage %}
+<div class="section-title mt-2"><i class="bi bi-diagram-3 me-1"></i>Knockout Stages</div>
+{% for stage in stages_order %}
+  {% if stage in knockout_by_stage %}
+  <div class="mb-4">
+    <h6 style="color:var(--text-muted);text-transform:uppercase;font-size:.75rem;letter-spacing:.1em;margin-bottom:.75rem">{{ stage }}</h6>
+    <div class="row g-2">
+      {% for m in knockout_by_stage[stage] %}
+      <div class="col-sm-6 col-lg-4">
+        <div class="match-card {% if m.played %}played{% endif %}">
+          {% if m.match_date %}<div class="match-meta mb-1">{{ m.match_date.strftime('%d %b %H:%M') }}{% if m.venue %} · {{ m.venue }}{% endif %}</div>{% endif %}
+          <div class="d-flex align-items-center justify-content-between gap-2">
+            <span class="fw-semibold small">{{ m.home_team.name }}</span>
+            {% if m.played %}
+              <span class="score-display">{{ m.result_string }}</span>
+            {% else %}
+              <span style="color:var(--text-dim);font-size:.8rem">vs</span>
+            {% endif %}
+            <span class="fw-semibold small text-end">{{ m.away_team.name }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
+{% elif group_tables %}
+<div class="alert alert-info">Knockout matches will appear here once groups are complete.</div>
+{% endif %}
+{% endblock %}

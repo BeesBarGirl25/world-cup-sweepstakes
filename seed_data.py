@@ -102,3 +102,62 @@ PARTICIPANTS = [
     {"name": "James Bruce",        "entry_fee_paid":  5.00},  # 1 entry
     {"name": "Ben Willis",         "entry_fee_paid":  5.00},  # 1 entry
 ]
+
+FUN_CATEGORIES = [
+    {
+        "name": "Wooden Spoon",
+        "emoji": "🥄",
+        "description": "The group-stage team with the lowest points and worst goal difference. A prize for the bravest underdog.",
+        "calc_key": "wooden_spoon",
+        "sort_order": 1,
+    },
+    {
+        "name": "Dirtiest Team",
+        "emoji": "🟥",
+        "description": "Most disciplinary points across the tournament (yellow=1pt, red=3pts). Tiebreaker: most reds, then most straight reds, then shared.",
+        "calc_key": "dirtiest",
+        "sort_order": 2,
+    },
+    {
+        "name": "Biggest Losers",
+        "emoji": "💔",
+        "description": "The team that suffers the biggest single-match defeat by goal difference. Tiebreaker: most goals conceded in that game.",
+        "calc_key": "biggest_loser",
+        "sort_order": 3,
+    },
+    {
+        "name": "Golden Boot",
+        "emoji": "⚽",
+        "description": "The team whose player wins the FIFA Golden Boot (tournament top scorer). Admin assigns this at the end.",
+        "calc_key": None,
+        "sort_order": 4,
+    },
+    {
+        "name": "Best Defense",
+        "emoji": "🧱",
+        "description": "The team that concedes the fewest goals across the whole tournament before being eliminated (or wins it all).",
+        "calc_key": "best_defense",
+        "sort_order": 5,
+    },
+    {
+        "name": "Penalty Kings",
+        "emoji": "🎯",
+        "description": "The team that wins the most penalty shootouts across the knockout stages. Sudden death glory.",
+        "calc_key": "penalty_kings",
+        "sort_order": 6,
+    },
+    {
+        "name": "Cinderella Story",
+        "emoji": "🪄",
+        "description": "The team that defies all expectations — furthest run from the lowest pre-tournament ranking. Admin picks this one.",
+        "calc_key": None,
+        "sort_order": 7,
+    },
+    {
+        "name": "Hat-trick Heroes",
+        "emoji": "🎩",
+        "description": "The team whose player is first to score a hat-trick in the tournament. Admin assigns when it happens.",
+        "calc_key": None,
+        "sort_order": 8,
+    },
+]

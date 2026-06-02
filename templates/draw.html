@@ -5,28 +5,33 @@
 <div class="d-flex align-items-center mb-4 gap-3">
   <h1 class="h4 mb-0"><i class="bi bi-shuffle me-2" style="color:var(--gold)"></i>Sweepstakes Draw</h1>
   <div class="ms-auto d-flex gap-2">
-    {% if not draw_done %}
-    <form method="POST" action="{{ url_for('run_draw') }}">
-      <button class="btn btn-gold px-4">
-        <i class="bi bi-play-fill me-1"></i>Run Draw
+    {% if draw_done %}
+      <button class="btn btn-gold px-4" onclick="openReveal()">
+        <i class="bi bi-play-circle me-1"></i>Watch the Draw
       </button>
-    </form>
+      <form method="POST" action="{{ url_for('reset_draw') }}"
+            onsubmit="return confirm('Reset the entire draw? All assignments will be cleared.')">
+        <button class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+        </button>
+      </form>
     {% else %}
-    <form method="POST" action="{{ url_for('reset_draw') }}"
-          onsubmit="return confirm('Reset the entire draw? All assignments will be cleared.')">
-      <button class="btn btn-outline-danger btn-sm">
-        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-      </button>
-    </form>
+      <form method="POST" action="{{ url_for('run_draw') }}">
+        <button class="btn btn-gold px-4">
+          <i class="bi bi-play-fill me-1"></i>Run Draw
+        </button>
+      </form>
     {% endif %}
   </div>
 </div>
 
 {% if draw_done %}
+
+<!-- Static result grid (shown after reveal or on return) -->
 <div class="alert alert-success mb-4">
   <i class="bi bi-check-circle me-1"></i>
-  Draw complete — {{ assignments | length }} team assignments across {{ participants | length }} players.
-  Teams with 2 owners share that team's points.
+  Draw complete — {{ assignments | length }} assignments across {{ participants | length }} players.
+  Hit <strong>Watch the Draw</strong> to replay the dramatic reveal.
 </div>
 
 <div class="row g-3 stagger">
@@ -48,9 +53,6 @@
           <span class="tla">{{ t.code }}</span>
           {{ t.name }}
           <span style="font-size:0.65rem;color:var(--text-dim)">G{{ t.group_name }}</span>
-          {% if t.eliminated %}
-            <span style="font-size:0.65rem;color:var(--red)">✕</span>
-          {% endif %}
         </span>
         {% endfor %}
       </div>
@@ -59,7 +61,58 @@
   {% endfor %}
 </div>
 
+<!-- ── Dramatic reveal overlay ── -->
+<div class="reveal-overlay" id="revealOverlay">
+  <div class="reveal-progress-track">
+    <div class="reveal-progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- Header controls -->
+  <div class="reveal-header">
+    <div class="reveal-counter" id="revealCounter">1 of {{ assignments | length }}</div>
+    <div class="d-flex gap-2 align-items-center">
+      <span style="font-size:0.72rem;color:var(--text-dim)">Speed:</span>
+      <button class="reveal-speed-btn active" data-speed="1800" onclick="setSpeed(this)">Slow</button>
+      <button class="reveal-speed-btn" data-speed="1000" onclick="setSpeed(this)">Normal</button>
+      <button class="reveal-speed-btn" data-speed="400" onclick="setSpeed(this)">Fast</button>
+      <button class="reveal-speed-btn" data-speed="0" onclick="setSpeed(this)">Manual</button>
+    </div>
+    <button class="reveal-close ms-2" onclick="closeReveal()" title="Close">✕</button>
+  </div>
+
+  <!-- Flip card stage -->
+  <div class="flip-scene" id="flipScene" onclick="handleCardClick()">
+    <div class="flip-card" id="flipCard">
+      <div class="flip-front">
+        <div class="mystery-ball">⚽</div>
+        <div class="mystery-text">???</div>
+      </div>
+      <div class="flip-back" id="flipBack">
+        <div class="reveal-team-code" id="backCode"></div>
+        <div class="reveal-team-name" id="backTeam"></div>
+        <div class="reveal-divider" id="backDivider">— goes to —</div>
+        <div class="reveal-participant-name" id="backParticipant"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reveal button (hidden in auto mode) -->
+  <button class="reveal-action" id="revealBtn" onclick="flipNow()">REVEAL</button>
+
+  <!-- Revealed-so-far strip -->
+  <div class="revealed-strip" id="revealedStrip"></div>
+
+  <!-- Done screen (hidden until complete) -->
+  <div class="reveal-done d-none" id="revealDone">
+    <div style="font-size:3rem;margin-bottom:0.5rem">🏆</div>
+    <div class="reveal-done-title">Draw Complete!</div>
+    <div style="color:var(--text-muted);margin:0.5rem 0 1.5rem">{{ assignments | length }} teams assigned</div>
+    <button class="btn btn-gold px-5" onclick="closeReveal()">View Full Draw</button>
+  </div>
+</div>
+
 {% else %}
+
 <div class="row g-4">
   <div class="col-lg-5">
     <div class="card">
@@ -86,12 +139,11 @@
           <div class="col-4"><div class="stat-chip"><div class="stat-num" style="color:var(--green)">48</div><div class="stat-label">Teams</div></div></div>
         </div>
         <p style="color:var(--text-muted);font-size:0.88rem">
-          Each £5 = 1 entry. Entries are weighted into a pool and shuffled against all 48 teams.
-          Since there are more entries (65) than teams (48), <strong style="color:var(--text)">17 teams will be shared between two players</strong> —
-          both players earn that team's points.
+          Each £5 = 1 entry. The draw is weighted — more entries means more chances.
+          With 65 entries across 48 teams, 17 teams will be shared between two players.
         </p>
         <form method="POST" action="{{ url_for('run_draw') }}">
-          <button class="btn btn-gold w-100 py-2 mt-2">
+          <button class="btn btn-gold w-100 py-2">
             <i class="bi bi-play-fill me-1"></i>Run the Draw
           </button>
         </form>
@@ -99,5 +151,159 @@
     </div>
   </div>
 </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if draw_done %}
+<script>
+const ASSIGNMENTS = {{ assignments_data | tojson }};
+const TOTAL = ASSIGNMENTS.length;
+let idx = 0;
+let flipped = false;
+let autoDelay = 1800;   // ms between auto flips (Slow default)
+let autoTimer = null;
+let isManual = false;
+let done = false;
+
+const overlay    = document.getElementById('revealOverlay');
+const flipCard   = document.getElementById('flipCard');
+const flipScene  = document.getElementById('flipScene');
+const progressFill = document.getElementById('progressFill');
+const counter    = document.getElementById('revealCounter');
+const revealBtn  = document.getElementById('revealBtn');
+const strip      = document.getElementById('revealedStrip');
+const doneScreen = document.getElementById('revealDone');
+
+const backCode        = document.getElementById('backCode');
+const backTeam        = document.getElementById('backTeam');
+const backDivider     = document.getElementById('backDivider');
+const backParticipant = document.getElementById('backParticipant');
+
+function openReveal() {
+  idx = 0; flipped = false; done = false;
+  strip.innerHTML = '';
+  doneScreen.classList.add('d-none');
+  flipScene.style.display = '';
+  revealBtn.style.display = '';
+  overlay.classList.add('active');
+  loadCard(idx);
+  if (!isManual) scheduleFlip();
+}
+
+function closeReveal() {
+  overlay.classList.remove('active');
+  clearTimeout(autoTimer);
+}
+
+function loadCard(i) {
+  flipCard.classList.remove('flipped');
+  flipped = false;
+  backDivider.classList.remove('show');
+  backParticipant.classList.remove('show');
+
+  if (i >= TOTAL) { showDone(); return; }
+
+  const a = ASSIGNMENTS[i];
+  backCode.textContent        = `${a.code} · Group ${a.group} · ${a.confederation}`;
+  backTeam.textContent        = a.team;
+  backParticipant.textContent = a.participant;
+
+  counter.textContent = `${i + 1} of ${TOTAL}`;
+  progressFill.style.width = `${(i / TOTAL) * 100}%`;
+}
+
+function flipNow() {
+  if (done || flipped) return;
+  clearTimeout(autoTimer);
+  flipCard.classList.add('flipped');
+  flipped = true;
+
+  // Stagger the text reveals on the back
+  setTimeout(() => backDivider.classList.add('show'), 350);
+  setTimeout(() => backParticipant.classList.add('show'), 650);
+
+  // Add chip to strip
+  addChip(ASSIGNMENTS[idx]);
+  idx++;
+
+  if (!isManual) {
+    // Pause on reveal, then advance
+    autoTimer = setTimeout(() => { loadCard(idx); if (!isManual) scheduleFlip(); }, autoDelay + 900);
+  }
+}
+
+function scheduleFlip() {
+  clearTimeout(autoTimer);
+  if (isManual || done) return;
+  autoTimer = setTimeout(flipNow, autoDelay);
+}
+
+function handleCardClick() {
+  if (!flipped) { flipNow(); }
+  else if (isManual) { loadCard(idx); }
+}
+
+function showDone() {
+  clearTimeout(autoTimer);
+  done = true;
+  flipScene.style.display = 'none';
+  revealBtn.style.display = 'none';
+  progressFill.style.width = '100%';
+  doneScreen.classList.remove('d-none');
+  launchConfetti();
+}
+
+function addChip(a) {
+  const chip = document.createElement('span');
+  chip.className = 'revealed-chip';
+  chip.textContent = `${a.code} → ${a.participant.split(' ')[0]}`;
+  strip.appendChild(chip);
+}
+
+function setSpeed(btn) {
+  document.querySelectorAll('.reveal-speed-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  autoDelay = parseInt(btn.dataset.speed);
+  isManual = autoDelay === 0;
+  revealBtn.style.display = isManual ? '' : 'none';
+  if (!isManual && !done) scheduleFlip();
+}
+
+// Simple confetti burst
+function launchConfetti() {
+  const colours = ['#f0a500','#ffd060','#00d68f','#4d9eff','#ff4d6d','#ffffff'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      top: -10px;
+      background: ${colours[Math.floor(Math.random() * colours.length)]};
+      width: ${5 + Math.random() * 8}px;
+      height: ${5 + Math.random() * 8}px;
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      animation-duration: ${2 + Math.random() * 3}s;
+      animation-delay: ${Math.random() * 1.5}s;
+    `;
+    overlay.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+}
+
+// Keyboard: Space/Enter to reveal, Escape to close
+document.addEventListener('keydown', e => {
+  if (!overlay.classList.contains('active')) return;
+  if (e.key === 'Escape') closeReveal();
+  if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
+    e.preventDefault();
+    if (!flipped) flipNow();
+    else if (isManual) loadCard(idx);
+  }
+});
+
+// Init speed button state
+setSpeed(document.querySelector('.reveal-speed-btn[data-speed="1800"]'));
+</script>
 {% endif %}
 {% endblock %}

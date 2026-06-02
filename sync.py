@@ -55,6 +55,14 @@ def sync_fixtures(app):
             headers=headers,
             timeout=15,
         )
+        # Honour rate-limit headers to avoid being throttled (as per API docs)
+        remaining = int(resp.headers.get("X-Requests-Available-Minute", 10))
+        if remaining < 2:
+            import time
+            reset_in = int(resp.headers.get("X-RequestCounter-Reset", 60))
+            print(f"Rate limit nearly reached, waiting {reset_in}s")
+            time.sleep(reset_in)
+
         resp.raise_for_status()
     except requests.RequestException as exc:
         return {"error": str(exc), "created": 0, "updated": 0}

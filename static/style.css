@@ -550,6 +550,257 @@ footer {
   .podium-pts { font-size: 2rem; }
 }
 
+/* ── Dramatic Draw Reveal ── */
+.reveal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5,9,18,0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: hidden;
+}
+.reveal-overlay.active { display: flex; }
+
+.reveal-progress-track {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+}
+.reveal-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.reveal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 520px;
+}
+.reveal-counter {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  flex: 1;
+}
+.reveal-speed-btn {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.reveal-speed-btn:hover, .reveal-speed-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-dim);
+}
+.reveal-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  transition: var(--transition);
+}
+.reveal-close:hover { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+
+/* The flip card */
+.flip-scene {
+  width: 420px;
+  max-width: 90vw;
+  height: 260px;
+  perspective: 1200px;
+  margin-bottom: 2rem;
+  cursor: pointer;
+}
+.flip-card {
+  width: 100%; height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.flip-card.flipped { transform: rotateY(180deg); }
+
+.flip-front, .flip-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.flip-front {
+  background: var(--bg-card);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 40px rgba(240,165,0,0.15), var(--shadow);
+}
+.flip-back {
+  background: linear-gradient(135deg, rgba(0,50,120,0.4), rgba(240,165,0,0.12));
+  border: 2px solid var(--green);
+  box-shadow: 0 0 40px rgba(0,214,143,0.15), var(--shadow);
+  transform: rotateY(180deg);
+  text-align: center;
+  gap: 0.5rem;
+}
+
+/* Front: mystery ball */
+.mystery-ball {
+  font-size: 4rem;
+  animation: mysteryPulse 1.2s ease-in-out infinite;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+@keyframes mysteryPulse {
+  0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 8px rgba(240,165,0,0.4)); }
+  50%       { transform: scale(1.12) rotate(15deg); filter: drop-shadow(0 0 20px rgba(240,165,0,0.8)); }
+}
+.mystery-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  opacity: 0.6;
+}
+
+/* Back: reveal content */
+.reveal-team-code {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.reveal-team-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+.reveal-divider {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: none;
+}
+.reveal-divider.show { animation: fadeInUp 0.4s 0.35s ease both; opacity: 1; }
+
+.reveal-participant-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--green);
+  opacity: 0;
+  animation: none;
+}
+.reveal-participant-name.show { animation: fadeInUp 0.4s 0.6s ease both; opacity: 1; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Reveal action button */
+.reveal-action {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 0.12em;
+  padding: 0.7rem 3rem;
+  border-radius: 50px;
+  border: 2px solid var(--gold);
+  background: var(--gold-dim);
+  color: var(--gold);
+  cursor: pointer;
+  transition: var(--transition);
+  margin-bottom: 1.5rem;
+}
+.reveal-action:hover, .reveal-action:focus {
+  background: var(--gold);
+  color: #000;
+  box-shadow: var(--shadow-gold);
+  outline: none;
+}
+.reveal-action:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Already-revealed strip */
+.revealed-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  max-width: 520px;
+  max-height: 80px;
+  overflow: hidden;
+}
+.revealed-chip {
+  font-size: 0.68rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--text-muted);
+  animation: chipIn 0.3s ease both;
+}
+@keyframes chipIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Fireworks / done state */
+.reveal-done {
+  text-align: center;
+  animation: fadeInUp 0.5s ease both;
+}
+.reveal-done-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3.5rem;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+/* Confetti particle */
+.confetti-piece {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+  pointer-events: none;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
 /* ── Stagger delays for grid items ── */
 .stagger > *:nth-child(1) { animation-delay: 0.05s; }
 .stagger > *:nth-child(2) { animation-delay: 0.10s; }

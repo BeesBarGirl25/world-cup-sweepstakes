@@ -1,107 +1,113 @@
 {% extends "base.html" %}
-{% block title %}Dashboard – WC 2026 Sweepstakes{% endblock %}
+{% block title %}WC 2026 Sweepstakes{% endblock %}
 
 {% block content %}
-<!-- Hero -->
+<!-- Compact hero -->
 <div class="hero mb-4">
-  <div class="row align-items-center">
-    <div class="col-lg-7">
-      <div class="hero-title">FIFA World Cup 2026</div>
-      <div class="hero-sub">Quantexa Charity Sweepstake &mdash; 32 players &middot; £{{ summary.pot | int }} pot</div>
-      <div class="countdown mt-3" id="countdown">
+  <div class="row align-items-center g-3">
+    <div class="col-lg-5">
+      <div class="hero-title">WC 2026</div>
+      <div class="hero-sub">Quantexa Charity Sweepstake</div>
+      <div class="countdown mt-2" id="countdown">
         <div class="countdown-unit"><div class="countdown-num" id="cd-d">--</div><div class="countdown-label">Days</div></div>
         <div class="countdown-unit"><div class="countdown-num" id="cd-h">--</div><div class="countdown-label">Hrs</div></div>
         <div class="countdown-unit"><div class="countdown-num" id="cd-m">--</div><div class="countdown-label">Min</div></div>
         <div class="countdown-unit"><div class="countdown-num" id="cd-s">--</div><div class="countdown-label">Sec</div></div>
       </div>
     </div>
-    <div class="col-lg-5 mt-3 mt-lg-0">
+    <div class="col-lg-7">
       <div class="row g-2">
-        <div class="col-6"><div class="stat-chip"><div class="stat-num text-warning">£{{ summary.pot | int }}</div><div class="stat-label">Prize Pot</div></div></div>
-        <div class="col-6"><div class="stat-chip"><div class="stat-num" style="color:var(--green)">{{ recent_matches | length }}</div><div class="stat-label">Results In</div></div></div>
-        <div class="col-6"><div class="stat-chip"><div class="stat-num" style="color:var(--blue)">{{ groups | length }}</div><div class="stat-label">Groups</div></div></div>
-        <div class="col-6"><div class="stat-chip"><div class="stat-num">48</div><div class="stat-label">Teams</div></div></div>
+        <div class="col-3"><div class="stat-chip"><div class="stat-num text-warning">£{{ summary.pot | int }}</div><div class="stat-label">Pot</div></div></div>
+        <div class="col-3"><div class="stat-chip"><div class="stat-num" style="color:var(--red)">£{{ summary.fun_prizes | int }}</div><div class="stat-label">Fun prizes</div></div></div>
+        <div class="col-3"><div class="stat-chip"><div class="stat-num" style="color:var(--green)">£{{ summary.remaining | int }}</div><div class="stat-label">Main pot</div></div></div>
+        <div class="col-3"><div class="stat-chip"><div class="stat-num" style="color:var(--blue)">{{ standings | length }}</div><div class="stat-label">Players</div></div></div>
       </div>
     </div>
   </div>
 </div>
 
 <div class="row g-4">
-  <!-- Groups -->
-  <div class="col-lg-8">
-    <div class="section-title"><i class="bi bi-grid me-1"></i>Group Stage</div>
-    <div class="row g-3 stagger">
-      {% for group_name, teams in groups | dictsort %}
-      <div class="col-sm-6 col-xl-4">
-        <div class="card group-card h-100">
-          <div class="card-header gold">Group {{ group_name }}</div>
-          <div>
-            {% for team in teams %}
-            <div class="team-row {% if team.eliminated %}eliminated{% endif %}">
-              <span class="team-code">{{ team.code }}</span>
-              <span class="team-name">
-                {{ team.name }}
-                {% if team.confederation %}
-                  <span class="conf-badge conf-{{ team.confederation }} ms-1">{{ team.confederation }}</span>
-                {% endif %}
+  <!-- Main leaderboard -->
+  <div class="col-lg-7">
+    <div class="section-title"><i class="bi bi-bar-chart-line me-1"></i>Sweepstakes Standings</div>
+
+    {% if not draw_done %}
+    <div class="alert alert-warning">Draw hasn't happened yet. <a href="{{ url_for('draw') }}" style="color:inherit;font-weight:600">Run the draw →</a></div>
+    {% else %}
+    {% set max_pts = standings[0].total_points if standings and standings[0].total_points > 0 else 1 %}
+    <table class="table lb-table w-100">
+      <tbody>
+        {% for p in standings %}
+        <tr class="lb-row">
+          <td class="rank-num">
+            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('player_profile', pid=p.id) }}"
+               style="color:var(--text);text-decoration:none;font-weight:600">
+              {{ p.name }}
+            </a>
+            {% if fun_prizes_map.get(p.id, 0) > 0 %}
+              <span class="badge ms-1" style="background:rgba(255,80,100,.15);color:var(--red);border:1px solid rgba(255,80,100,.3);font-size:.65rem">
+                +£{{ fun_prizes_map[p.id] | int }} fun
               </span>
-              {% if team.assignments %}
-              <div class="team-owners">
-                {% for a in team.assignments %}
-                  <span class="owner-chip">{{ a.participant.name.split()[0] }}</span>
-                {% endfor %}
-              </div>
-              {% endif %}
-              <span class="pts-badge">{{ team.points }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex flex-wrap gap-1">
+              {% for t in p.alive_teams[:4] %}
+              <span class="team-pill" title="{{ t.name }}"><span class="tla">{{ t.code }}</span></span>
+              {% endfor %}
+              {% if p.alive_teams | length > 4 %}<span style="font-size:.75rem;color:var(--text-dim)">+{{ p.alive_teams | length - 4 }}</span>{% endif %}
             </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="pts-bar-wrap"><div class="pts-bar" style="width:{{ [(p.total_points / max_pts * 100), 100] | min }}%"></div></div>
+              <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--gold);min-width:28px">{{ p.total_points }}</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
   </div>
 
-  <!-- Sidebar -->
-  <div class="col-lg-4">
-    {% if recent_matches %}
-    <div class="section-title"><i class="bi bi-check2-circle me-1"></i>Recent Results</div>
+  <!-- Sidebar: fun categories + recent results -->
+  <div class="col-lg-5">
+    <div class="section-title"><i class="bi bi-stars me-1"></i>Fun Categories <a href="{{ url_for('fun') }}" style="font-size:.75rem;color:var(--gold);text-decoration:none;margin-left:.5rem">View all →</a></div>
     <div class="mb-4">
-      {% for m in recent_matches %}
-      <div class="match-card played mb-2">
-        <div class="match-meta mb-1">{{ m.stage }}</div>
-        <div class="d-flex align-items-center justify-content-between gap-2">
-          <span class="fw-semibold small">{{ m.home_team.name }}</span>
-          <span class="score-display">{{ m.result_string }}</span>
-          <span class="fw-semibold small text-end">{{ m.away_team.name }}</span>
+      {% for cat, (leaders, is_auto) in cat_leaders %}
+      <div class="match-card mb-2 d-flex align-items-center gap-2">
+        <span style="font-size:1.2rem">{{ cat.emoji }}</span>
+        <div class="flex-grow-1">
+          <div style="font-size:.8rem;font-weight:600">{{ cat.name }}</div>
+          <div style="font-size:.72rem;color:var(--text-muted)">
+            {% if leaders %}
+              {% for t in leaders[:2] %}{{ t.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% if leaders | length > 2 %} +{{ leaders | length - 2 }}{% endif %}
+            {% else %}
+              <span style="color:var(--text-dim)">TBD</span>
+            {% endif %}
+          </div>
         </div>
+        <span style="font-family:'Bebas Neue',sans-serif;color:var(--gold);font-size:.9rem">£{{ cat.prize | int }}</span>
       </div>
       {% endfor %}
     </div>
-    {% endif %}
 
-    {% if upcoming %}
-    <div class="section-title"><i class="bi bi-calendar me-1"></i>Upcoming</div>
-    {% for m in upcoming %}
-    <div class="match-card mb-2">
-      <div class="match-meta mb-1">
-        {{ m.stage }}{% if m.match_date %} &middot; {{ m.match_date.strftime('%d %b') }}{% endif %}
-      </div>
+    {% if recent_matches %}
+    <div class="section-title"><i class="bi bi-check2-circle me-1"></i>Recent Results</div>
+    {% for m in recent_matches %}
+    <div class="match-card played mb-2">
+      <div class="match-meta mb-1">{{ m.stage }}</div>
       <div class="d-flex align-items-center justify-content-between gap-2">
         <span class="small fw-semibold">{{ m.home_team.name }}</span>
-        <span class="text-muted small">vs</span>
+        <span class="score-display">{{ m.result_string }}</span>
         <span class="small fw-semibold text-end">{{ m.away_team.name }}</span>
       </div>
     </div>
     {% endfor %}
-    {% endif %}
-
-    {% if not recent_matches and not upcoming %}
-    <div class="alert alert-info">
-      <i class="bi bi-info-circle me-1"></i>
-      No matches yet. Hit <strong>Sync</strong> to pull fixtures from the API, or
-      <a href="{{ url_for('results') }}" style="color:inherit">add them manually →</a>
-    </div>
     {% endif %}
   </div>
 </div>
@@ -109,23 +115,17 @@
 
 {% block scripts %}
 <script>
-  const target = new Date('2026-06-11T19:00:00Z');
-  function tick() {
-    const now = new Date();
-    const diff = target - now;
-    if (diff <= 0) {
-      document.getElementById('countdown').innerHTML = '<span style="color:var(--green);font-family:Bebas Neue,sans-serif;font-size:1.5rem">IT\'S HAPPENING! ⚽</span>';
-      return;
-    }
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    document.getElementById('cd-d').textContent = d;
-    document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
-    document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
-    document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
-  }
-  tick(); setInterval(tick, 1000);
+const target = new Date('2026-06-11T19:00:00Z');
+function tick() {
+  const diff = target - new Date();
+  if (diff <= 0) { document.getElementById('countdown').innerHTML = '<span style="color:var(--green);font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem">IT\'S HAPPENING ⚽</span>'; return; }
+  const d = Math.floor(diff/86400000), h = Math.floor(diff%86400000/3600000),
+        m = Math.floor(diff%3600000/60000), s = Math.floor(diff%60000/1000);
+  document.getElementById('cd-d').textContent = d;
+  document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+  document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+  document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+}
+tick(); setInterval(tick, 1000);
 </script>
 {% endblock %}
