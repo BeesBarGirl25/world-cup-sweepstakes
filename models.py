@@ -23,6 +23,7 @@ class Team(db.Model):
     confederation = db.Column(db.String(20), nullable=True)
     eliminated = db.Column(db.Boolean, default=False)
     eliminated_stage = db.Column(db.String(50), nullable=True)
+    flag_emoji = db.Column(db.String(10), nullable=True)
 
     assignments = db.relationship("Assignment", back_populates="team")
     home_matches = db.relationship("Match", foreign_keys="Match.home_team_id", back_populates="home_team")
@@ -212,6 +213,12 @@ class FunWinner(db.Model):
 
     category = db.relationship("FunCategory", back_populates="winners")
     team = db.relationship("Team", back_populates="fun_wins")
+
+
+class AppSettings(db.Model):
+    __tablename__ = "app_settings"
+    key = db.Column(db.String(50), primary_key=True)
+    value = db.Column(db.String(200), default="")
 
 
 class Prize(db.Model):

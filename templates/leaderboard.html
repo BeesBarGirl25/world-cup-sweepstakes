@@ -31,7 +31,7 @@
       <div class="podium-pts-label">points</div>
       <div class="mt-2 d-flex flex-wrap justify-content-center gap-1">
         {% for t in standings[0].teams %}
-          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}"><span class="tla">{{ t.code }}</span></span>
+          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}">{{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }} <span class="tla">{{ t.code }}</span></span>
         {% endfor %}
       </div>
     </div>
@@ -44,7 +44,7 @@
       <div class="podium-pts-label">points</div>
       <div class="mt-2 d-flex flex-wrap justify-content-center gap-1">
         {% for t in standings[1].teams %}
-          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}"><span class="tla">{{ t.code }}</span></span>
+          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}">{{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }} <span class="tla">{{ t.code }}</span></span>
         {% endfor %}
       </div>
     </div>
@@ -57,7 +57,7 @@
       <div class="podium-pts-label">points</div>
       <div class="mt-2 d-flex flex-wrap justify-content-center gap-1">
         {% for t in standings[2].teams %}
-          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}"><span class="tla">{{ t.code }}</span></span>
+          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}">{{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }} <span class="tla">{{ t.code }}</span></span>
         {% endfor %}
       </div>
     </div>
@@ -83,7 +83,7 @@
         <div class="d-flex flex-wrap gap-1">
           {% for t in p.teams | sort(attribute='eliminated') %}
           <span class="team-pill {% if t.eliminated %}eliminated{% endif %}" title="{{ t.name }}">
-            <span class="tla">{{ t.code }}</span>
+            {{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }} <span class="tla">{{ t.code }}</span>
           </span>
           {% endfor %}
         </div>

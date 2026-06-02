@@ -2,98 +2,98 @@
 {% block title %}{{ participant.name }} – WC 2026{% endblock %}
 
 {% block content %}
-<!-- Profile header -->
+<!-- Header -->
 <div class="hero mb-4" style="padding:1.5rem 2rem">
   <div class="row align-items-center g-3">
     <div class="col-auto">
-      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#000;font-weight:700">
+      <div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#000">
         {{ participant.name[0] }}
       </div>
     </div>
     <div class="col">
-      <div class="hero-title" style="font-size:2.2rem">{{ participant.name }}</div>
+      <div class="hero-title" style="font-size:2rem">{{ participant.name }}</div>
       <div class="hero-sub">
-        {{ participant.entries }} entr{{ 'y' if participant.entries == 1 else 'ies' }} &middot;
-        £{{ participant.entry_fee_paid | int }} paid &middot;
-        Rank <strong style="color:var(--gold)">{{ rank }}</strong> of {{ total }}
+        {{ participant.entries }} entr{{ 'y' if participant.entries == 1 else 'ies' }}
+        &middot; £{{ participant.entry_fee_paid | int }} paid
+        &middot; Rank <strong style="color:var(--gold)">{{ rank }}</strong>/{{ total }}
       </div>
     </div>
     <div class="col-auto text-end">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:3.5rem;line-height:1;color:var(--gold)">{{ participant.total_points }}</div>
-      <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">Tournament pts</div>
-      {% if fun_prize > 0 %}
-      <div style="font-size:.85rem;margin-top:.3rem;color:var(--red)">+£{{ fun_prize | int }} fun prizes</div>
-      {% endif %}
+      <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">Sweepstake pts</div>
+      {% if fun_prize > 0 %}<div style="font-size:.85rem;margin-top:.3rem;color:var(--red)">+£{{ fun_prize | int }} fun prizes</div>{% endif %}
     </div>
   </div>
 </div>
 
 <div class="row g-4">
-  <!-- Teams + performance -->
+  <!-- Teams -->
   <div class="col-lg-7">
     <div class="section-title"><i class="bi bi-flag me-1"></i>My Teams</div>
     {% if participant.teams %}
     <div class="row g-2 mb-4">
-      {% for team in participant.teams | sort(attribute='eliminated') | sort(attribute='points', reverse=True) %}
+      {% for team in participant.teams | sort(attribute='points', reverse=True) %}
       <div class="col-sm-6">
-        <div class="card {% if team.eliminated %}opacity-50{% endif %}" style="border-color:{% if not team.eliminated %}var(--gold){% else %}var(--border){% endif %}">
-          <div class="p-3 d-flex align-items-center gap-3">
-            <div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;line-height:1;color:{% if team.eliminated %}var(--text-muted){% else %}var(--gold){% endif %}">{{ team.code }}</div>
-              <div style="font-size:.65rem;color:var(--text-dim)">Group {{ team.group_name }}</div>
-            </div>
-            <div class="flex-grow-1">
-              <div style="font-weight:700;font-size:.95rem">{{ team.name }}</div>
+        <div class="card h-100" style="border-color:{% if not team.eliminated %}rgba(240,165,0,.3){% else %}var(--border){% endif %}">
+          <div class="p-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span style="font-size:2rem">{{ team.flag_emoji or FLAG_EMOJIS.get(team.code,'🏳️') }}</span>
               <div>
-                <span class="conf-badge conf-{{ team.confederation }}">{{ team.confederation }}</span>
-                {% if team.eliminated %}
-                  <span class="badge ms-1" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,109,.3);font-size:.6rem">{{ team.eliminated_stage }}</span>
-                {% else %}
-                  <span class="badge ms-1" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(0,214,143,.3);font-size:.6rem">Still in</span>
-                {% endif %}
+                <div style="font-weight:700">{{ team.name }}</div>
+                <div style="font-size:.7rem">
+                  <span class="conf-badge conf-{{ team.confederation }}">{{ team.confederation }}</span>
+                  Grp {{ team.group_name }}
+                  {% if team.eliminated %}
+                    <span class="badge ms-1" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,109,.3);font-size:.6rem">{{ team.eliminated_stage }}</span>
+                  {% else %}
+                    <span class="badge ms-1" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(0,214,143,.3);font-size:.6rem">Still in</span>
+                  {% endif %}
+                </div>
               </div>
+              <div class="ms-auto" style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--gold)">{{ team.points }}</div>
             </div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gold)">{{ team.points }}</div>
+
+            <!-- Group table mini -->
+            {% if group_tables.get(team.group_name) %}
+            <table style="width:100%;font-size:.72rem;color:var(--text-muted)">
+              <tr style="color:var(--text-dim);font-size:.65rem;text-transform:uppercase">
+                <th style="padding:1px 0">Team</th><th style="text-align:center;width:20px">P</th><th style="text-align:center;width:20px">Pts</th><th style="text-align:center;width:24px">GD</th>
+              </tr>
+              {% for row in group_tables[team.group_name] %}
+              <tr style="{% if row.team.id == team.id %}color:var(--gold);font-weight:600{% endif %}">
+                <td style="padding:1px 0">{{ row.team.flag_emoji or '' }} {{ row.team.name }}</td>
+                <td style="text-align:center">{{ row.P }}</td>
+                <td style="text-align:center">{{ row.Pts }}</td>
+                <td style="text-align:center;color:{% if row.GD > 0 %}var(--green){% elif row.GD < 0 %}var(--red){% else %}var(--text-dim){% endif %}">{{ '+' if row.GD > 0 }}{{ row.GD }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+            {% endif %}
+
+            <!-- Upcoming fixtures for this team -->
+            {% set upcoming = [] %}
+            {% for m in team.all_matches %}
+              {% if not m.played %}{% set _ = upcoming.append(m) %}{% endif %}
+            {% endfor %}
+            {% if upcoming %}
+            <div style="margin-top:.5rem;font-size:.72rem;color:var(--text-muted)">
+              <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:2px">Next fixture{{ 's' if upcoming | length > 1 }}</div>
+              {% for m in upcoming[:2] %}
+              <div>
+                {% if m.match_date %}{{ m.match_date.strftime('%d %b') }}{% endif %}
+                <span style="color:var(--text)">{{ m.home_team.name }} vs {{ m.away_team.name }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <div class="alert alert-info mb-4">No teams assigned yet — draw hasn't been run.</div>
+    <div class="alert alert-info mb-4">No teams assigned yet.</div>
     {% endif %}
-
-    <!-- Points breakdown -->
-    <div class="section-title"><i class="bi bi-graph-up me-1"></i>Points Breakdown</div>
-    <div class="card mb-4">
-      <div class="p-3">
-        <table class="table table-sm mb-0" style="color:var(--text)">
-          <thead><tr style="color:var(--text-muted);font-size:.75rem;text-transform:uppercase">
-            <th>Source</th><th class="text-end">Points</th>
-          </tr></thead>
-          <tbody>
-            {% for team in participant.teams %}
-            {% set tp = team.points %}
-            {% if tp > 0 %}
-            <tr>
-              <td style="font-size:.85rem">{{ team.name }} <span class="conf-badge conf-{{ team.confederation }}">{{ team.code }}</span></td>
-              <td class="text-end" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold)">{{ tp }}</td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-            {% if participant.total_points == 0 %}
-            <tr><td colspan="2" style="color:var(--text-dim);font-size:.85rem">No points yet — tournament hasn't started.</td></tr>
-            {% endif %}
-          </tbody>
-          <tfoot>
-            <tr style="border-top:1px solid var(--border)">
-              <td style="font-weight:700">Total</td>
-              <td class="text-end" style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--gold)">{{ participant.total_points }}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
   </div>
 
   <!-- Sidebar -->
@@ -103,59 +103,50 @@
       <div class="card-header" style="color:var(--green)"><i class="bi bi-lightning me-1"></i>Win Probability</div>
       <div class="p-4 text-center">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:4rem;line-height:1;color:var(--green)">{{ likelihood }}%</div>
-        <div style="font-size:.8rem;color:var(--text-muted);margin:.4rem 0 1rem">
-          {{ participant.alive_teams | length }} of your teams still alive
-        </div>
+        <div style="font-size:.8rem;color:var(--text-muted);margin:.4rem 0 1rem">{{ participant.alive_teams | length }} of your teams still alive</div>
         <div style="height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden">
           <div style="height:100%;width:{{ likelihood }}%;background:linear-gradient(90deg,var(--green),#40ffb0);border-radius:4px;transition:width .8s ease"></div>
         </div>
-        <div style="font-size:.72rem;color:var(--text-dim);margin-top:.5rem">
-          Based on share of remaining teams in the draw
-        </div>
+        <div style="font-size:.7rem;color:var(--text-dim);margin-top:.5rem">Share of remaining teams in the draw</div>
       </div>
     </div>
 
-    <!-- Fun category potential -->
+    <!-- Fun prize potential -->
     <div class="section-title"><i class="bi bi-stars me-1"></i>Fun Prize Potential</div>
     {% if fun_potential %}
-    {% for cat, team in fun_potential %}
-    <div class="match-card mb-2 d-flex align-items-center gap-3">
-      <span style="font-size:1.4rem">{{ cat.emoji }}</span>
-      <div class="flex-grow-1">
-        <div style="font-size:.85rem;font-weight:600">{{ cat.name }}</div>
-        <div style="font-size:.72rem;color:var(--text-muted)">via {{ team.name }}</div>
+      {% for cat, team in fun_potential %}
+      <div class="match-card mb-2 d-flex align-items-center gap-3">
+        <span style="font-size:1.3rem">{{ cat.emoji }}</span>
+        <div class="flex-grow-1">
+          <div style="font-size:.85rem;font-weight:600">{{ cat.name }}</div>
+          <div style="font-size:.72rem;color:var(--text-muted)">via {{ team.flag_emoji or '' }} {{ team.name }}</div>
+        </div>
+        <span style="font-family:'Bebas Neue',sans-serif;color:var(--gold)">£{{ cat.prize | int }}</span>
       </div>
-      <span style="font-family:'Bebas Neue',sans-serif;color:var(--gold)">£{{ cat.prize | int }}</span>
-    </div>
-    {% endfor %}
-    {% if fun_prize > 0 %}
-    <div style="text-align:right;margin-top:.5rem;font-size:.85rem;color:var(--gold);font-weight:700">
-      Total fun prizes: £{{ fun_prize | int }}
-    </div>
-    {% endif %}
+      {% endfor %}
     {% else %}
-    <div style="color:var(--text-dim);font-size:.85rem;margin-bottom:1rem">
-      None of your teams are currently leading a fun category.
-    </div>
+    <div style="color:var(--text-dim);font-size:.85rem;margin-bottom:1rem">None of your teams currently lead a fun category.</div>
     {% endif %}
 
-    <!-- All fun categories mini -->
-    <div class="section-title mt-3"><i class="bi bi-trophy me-1"></i>All Categories</div>
-    {% for cat, (leaders, is_auto) in cat_leaders %}
+    <!-- All fun categories -->
+    <div class="section-title mt-3"><i class="bi bi-list-ul me-1"></i>All Categories</div>
     {% set my_team_ids = participant.teams | map(attribute='id') | list %}
+    {% for cat, (leaders, is_auto) in cat_leaders %}
+    {% if cat.calc_key %}
     <div class="match-card mb-2 d-flex align-items-center gap-2">
       <span>{{ cat.emoji }}</span>
       <div class="flex-grow-1" style="font-size:.8rem">{{ cat.name }}</div>
-      <div>
-        {% if leaders %}
-          {% for t in leaders %}
-            <span class="team-pill {% if t.id in my_team_ids %}{% else %}opacity-50{% endif %}" style="font-size:.65rem">{{ t.code }}</span>
-          {% endfor %}
-        {% else %}
-          <span style="color:var(--text-dim);font-size:.72rem">TBD</span>
-        {% endif %}
-      </div>
+      {% if leaders %}
+        {% for t in leaders[:2] %}
+        <span class="team-pill {% if t.id not in my_team_ids %}opacity-50{% endif %}" title="{{ t.name }}" style="font-size:.65rem">
+          {{ t.flag_emoji or '' }} {{ t.code }}
+        </span>
+        {% endfor %}
+      {% else %}
+        <span style="color:var(--text-dim);font-size:.72rem">TBD</span>
+      {% endif %}
     </div>
+    {% endif %}
     {% endfor %}
   </div>
 </div>

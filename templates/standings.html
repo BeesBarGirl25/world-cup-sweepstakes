@@ -3,92 +3,169 @@
 
 {% block content %}
 <div class="d-flex align-items-center mb-4">
-  <h1 class="h4 mb-0"><i class="bi bi-table me-2" style="color:var(--gold)"></i>Tournament Standings</h1>
+  <h1 class="h4 mb-0"><i class="bi bi-diagram-3 me-2" style="color:var(--gold)"></i>Tournament Standings</h1>
 </div>
 
-<!-- Group stage tables -->
+<!-- Group Tables -->
 <div class="section-title"><i class="bi bi-grid me-1"></i>Group Stage</div>
 {% if group_tables %}
 <div class="row g-3 mb-5 stagger">
   {% for group_name, rows in group_tables | dictsort %}
   <div class="col-sm-6 col-xl-4">
     <div class="card">
-      <div class="card-header gold" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em">
-        Group {{ group_name }}
-      </div>
-      <div class="p-0">
-        <table class="table table-sm mb-0" style="color:var(--text);font-size:.82rem">
-          <thead>
-            <tr style="color:var(--text-muted);font-size:.7rem">
-              <th class="ps-3" style="width:40%">Team</th>
-              <th class="text-center">P</th>
-              <th class="text-center">W</th>
-              <th class="text-center">D</th>
-              <th class="text-center">L</th>
-              <th class="text-center">GD</th>
-              <th class="text-center pe-3">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in rows %}
-            <tr style="border-bottom:1px solid var(--border);{% if loop.index <= 2 %}background:rgba(0,214,143,.04){% endif %}">
-              <td class="ps-3 py-2">
-                <span class="fw-semibold">{{ row.team.name }}</span>
-                {% if row.team.eliminated %}<span class="badge ms-1" style="font-size:.58rem;background:var(--red-dim);color:var(--red)">out</span>{% endif %}
-                {% if loop.index <= 2 and row.P > 0 %}<span class="ms-1" style="font-size:.65rem;color:var(--green)">↑</span>{% endif %}
-              </td>
-              <td class="text-center">{{ row.P }}</td>
-              <td class="text-center">{{ row.W }}</td>
-              <td class="text-center">{{ row.D }}</td>
-              <td class="text-center">{{ row.L }}</td>
-              <td class="text-center" style="color:{% if row.GD > 0 %}var(--green){% elif row.GD < 0 %}var(--red){% else %}var(--text-muted){% endif %}">
-                {{ '+' if row.GD > 0 else '' }}{{ row.GD }}
-              </td>
-              <td class="text-center pe-3 fw-bold" style="color:var(--gold)">{{ row.Pts }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+      <div class="card-header gold" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em">Group {{ group_name }}</div>
+      <table class="table table-sm mb-0" style="color:var(--text);font-size:.8rem">
+        <thead><tr style="color:var(--text-dim);font-size:.68rem;text-transform:uppercase">
+          <th class="ps-3" style="width:50%">Team</th>
+          <th class="text-center">P</th><th class="text-center">W</th><th class="text-center">D</th><th class="text-center">L</th>
+          <th class="text-center">GD</th><th class="text-center pe-2">Pts</th>
+        </tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr style="border-bottom:1px solid var(--border);{% if loop.index <= 2 and row.P > 0 %}background:rgba(0,214,143,.04){% endif %}">
+            <td class="ps-3 py-2">
+              <span style="margin-right:.3rem">{{ row.team.flag_emoji or FLAG_EMOJIS.get(row.team.code,'') }}</span>
+              {{ row.team.name }}
+              {% if row.team.eliminated %}<span class="badge ms-1" style="font-size:.55rem;background:var(--red-dim);color:var(--red)">out</span>{% endif %}
+              {% if loop.index <= 2 and row.P > 0 %}<span style="color:var(--green);font-size:.7rem;margin-left:.25rem">↑</span>{% endif %}
+            </td>
+            <td class="text-center">{{ row.P }}</td>
+            <td class="text-center">{{ row.W }}</td>
+            <td class="text-center">{{ row.D }}</td>
+            <td class="text-center">{{ row.L }}</td>
+            <td class="text-center" style="color:{% if row.GD > 0 %}var(--green){% elif row.GD < 0 %}var(--red){% else %}var(--text-muted){% endif %}">{{ '+' if row.GD > 0 }}{{ row.GD }}</td>
+            <td class="text-center pe-2 fw-bold" style="color:var(--gold)">{{ row.Pts }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
   {% endfor %}
 </div>
 {% else %}
-<div class="alert alert-info mb-4">
-  No group stage results yet. <a href="{{ url_for('results') }}" style="color:inherit">Add results →</a>
-</div>
+<div class="alert alert-info mb-4">No group results yet. <a href="{{ url_for('results') }}" style="color:inherit">Sync or add results →</a></div>
 {% endif %}
 
-<!-- Knockout bracket -->
+<!-- Knockout Bracket -->
 {% if knockout_by_stage %}
-<div class="section-title mt-2"><i class="bi bi-diagram-3 me-1"></i>Knockout Stages</div>
-{% for stage in stages_order %}
-  {% if stage in knockout_by_stage %}
-  <div class="mb-4">
-    <h6 style="color:var(--text-muted);text-transform:uppercase;font-size:.75rem;letter-spacing:.1em;margin-bottom:.75rem">{{ stage }}</h6>
-    <div class="row g-2">
-      {% for m in knockout_by_stage[stage] %}
-      <div class="col-sm-6 col-lg-4">
-        <div class="match-card {% if m.played %}played{% endif %}">
-          {% if m.match_date %}<div class="match-meta mb-1">{{ m.match_date.strftime('%d %b %H:%M') }}{% if m.venue %} · {{ m.venue }}{% endif %}</div>{% endif %}
-          <div class="d-flex align-items-center justify-content-between gap-2">
-            <span class="fw-semibold small">{{ m.home_team.name }}</span>
-            {% if m.played %}
-              <span class="score-display">{{ m.result_string }}</span>
-            {% else %}
-              <span style="color:var(--text-dim);font-size:.8rem">vs</span>
+<div class="section-title mt-2"><i class="bi bi-trophy me-1"></i>Knockout Bracket</div>
+<div class="bracket-scroll-wrap">
+  <div class="bracket-container" id="bracket-container">
+    {% set stage_order = ['Round of 32', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final'] %}
+    {% set ns = namespace(half_count=0) %}
+
+    {% for stage in stage_order %}
+    {% if stage in knockout_by_stage %}
+    {% set matches = knockout_by_stage[stage] %}
+    <div class="bracket-col" data-stage="{{ stage }}">
+      <div class="bracket-col-label">{{ stage }}</div>
+      <div class="bracket-col-matches">
+        {% set pair_size = (matches | length / 2) | round(0, 'ceil') | int %}
+        {% for i in range(0, matches | length, 2) %}
+        <div class="bracket-pair">
+          <div class="bracket-matchup {% if matches[i].played %}played{% endif %}">
+            <div class="bracket-team {% if matches[i].played and matches[i].home_score > matches[i].away_score %}winner{% endif %}">
+              <span class="bkt-flag">{{ matches[i].home_team.flag_emoji or FLAG_EMOJIS.get(matches[i].home_team.code,'🏳️') }}</span>
+              <span class="bkt-name">{{ matches[i].home_team.name }}</span>
+              {% if matches[i].played %}<span class="bkt-score">{{ matches[i].home_score }}</span>{% endif %}
+            </div>
+            <div class="bracket-team {% if matches[i].played and matches[i].away_score > matches[i].home_score %}winner{% endif %}">
+              <span class="bkt-flag">{{ matches[i].away_team.flag_emoji or FLAG_EMOJIS.get(matches[i].away_team.code,'🏳️') }}</span>
+              <span class="bkt-name">{{ matches[i].away_team.name }}</span>
+              {% if matches[i].played %}<span class="bkt-score">{{ matches[i].away_score }}</span>{% endif %}
+            </div>
+            {% if matches[i].match_date %}
+            <div class="bkt-date">{{ matches[i].match_date.strftime('%d %b') }}{% if matches[i].venue %} · {{ matches[i].venue | truncate(20, true, '') }}{% endif %}</div>
             {% endif %}
-            <span class="fw-semibold small text-end">{{ m.away_team.name }}</span>
           </div>
+
+          {% if i + 1 < matches | length %}
+          <div class="bracket-matchup {% if matches[i+1].played %}played{% endif %}">
+            <div class="bracket-team {% if matches[i+1].played and matches[i+1].home_score > matches[i+1].away_score %}winner{% endif %}">
+              <span class="bkt-flag">{{ matches[i+1].home_team.flag_emoji or FLAG_EMOJIS.get(matches[i+1].home_team.code,'🏳️') }}</span>
+              <span class="bkt-name">{{ matches[i+1].home_team.name }}</span>
+              {% if matches[i+1].played %}<span class="bkt-score">{{ matches[i+1].home_score }}</span>{% endif %}
+            </div>
+            <div class="bracket-team {% if matches[i+1].played and matches[i+1].away_score > matches[i+1].home_score %}winner{% endif %}">
+              <span class="bkt-flag">{{ matches[i+1].away_team.flag_emoji or FLAG_EMOJIS.get(matches[i+1].away_team.code,'🏳️') }}</span>
+              <span class="bkt-name">{{ matches[i+1].away_team.name }}</span>
+              {% if matches[i+1].played %}<span class="bkt-score">{{ matches[i+1].away_score }}</span>{% endif %}
+            </div>
+            {% if matches[i+1].match_date %}
+            <div class="bkt-date">{{ matches[i+1].match_date.strftime('%d %b') }}</div>
+            {% endif %}
+          </div>
+          {% else %}
+          <div class="bracket-matchup tbd"><div class="bracket-team"><span class="bkt-name" style="color:var(--text-dim)">TBD</span></div><div class="bracket-team"><span class="bkt-name" style="color:var(--text-dim)">TBD</span></div></div>
+          {% endif %}
         </div>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
+    {% endif %}
+    {% endfor %}
+
+    <!-- SVG overlay for connector lines -->
+    <svg id="bracket-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible"></svg>
   </div>
-  {% endif %}
-{% endfor %}
+</div>
 {% elif group_tables %}
-<div class="alert alert-info">Knockout matches will appear here once groups are complete.</div>
+<div class="alert alert-info">Knockout bracket will appear here once the group stage is complete.</div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function drawBracket() {
+  const container = document.getElementById('bracket-container');
+  if (!container) return;
+  const svg = document.getElementById('bracket-svg');
+  if (!svg) return;
+
+  const cols = Array.from(container.querySelectorAll('.bracket-col'));
+  const cRect = container.getBoundingClientRect();
+  svg.setAttribute('width', container.scrollWidth);
+  svg.setAttribute('height', container.scrollHeight);
+
+  const color = 'rgba(255,255,255,0.12)';
+
+  for (let c = 0; c + 1 < cols.length; c++) {
+    const pairsA = Array.from(cols[c].querySelectorAll('.bracket-pair'));
+    const pairsB = Array.from(cols[c+1].querySelectorAll('.bracket-pair'));
+
+    pairsB.forEach((pairB, bi) => {
+      const pairA1 = pairsA[bi * 2];
+      const pairA2 = pairsA[bi * 2 + 1];
+      if (!pairA1 || !pairA2) return;
+
+      const r1 = pairA1.getBoundingClientRect();
+      const r2 = pairA2.getBoundingClientRect();
+      const rB = pairB.getBoundingClientRect();
+      const scrollX = container.scrollLeft;
+      const scrollY = container.scrollTop;
+      const ox = cRect.left;
+      const oy = cRect.top;
+
+      const x1 = r1.right - ox + scrollX;
+      const y1 = r1.top + r1.height / 2 - oy + scrollY;
+      const x2 = r2.right - ox + scrollX;
+      const y2 = r2.top + r2.height / 2 - oy + scrollY;
+      const xB = rB.left - ox + scrollX;
+      const yB = rB.top + rB.height / 2 - oy + scrollY;
+      const midX = (x1 + xB) / 2;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M${x1},${y1} H${midX} V${y2} H${x2} M${midX},${(y1+y2)/2} H${xB}`);
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('fill', 'none');
+      svg.appendChild(path);
+    });
+  }
+}
+
+window.addEventListener('load', drawBracket);
+window.addEventListener('resize', () => { document.getElementById('bracket-svg').innerHTML = ''; drawBracket(); });
+</script>
 {% endblock %}

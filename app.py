@@ -1,9 +1,9 @@
 import os
 import random
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort
-from models import db, Team, Participant, Assignment, Match, Prize, FunCategory, FunWinner
-from seed_data import TEAMS, PARTICIPANTS, FUN_CATEGORIES
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from models import db, Team, Participant, Assignment, Match, Prize, FunCategory, FunWinner, AppSettings
+from seed_data import TEAMS, PARTICIPANTS, FUN_CATEGORIES, FLAG_EMOJIS, TEAM_FACTS
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
@@ -15,6 +15,14 @@ app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+
+
+@app.context_processor
+def inject_globals():
+    return {
+        "is_admin": is_admin(),
+        "FLAG_EMOJIS": FLAG_EMOJIS,
+    }
 
 
 # ── Fun category auto-calculators ─────────────────────────────────────────────
@@ -323,6 +331,9 @@ def fun():
 
 @app.route("/fun/<int:cid>/winner", methods=["POST"])
 def set_fun_winner(cid):
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("fun"))
     cat = FunCategory.query.get_or_404(cid)
     team_id = request.form.get("team_id")
     notes = request.form.get("notes", "").strip()
@@ -343,6 +354,9 @@ def set_fun_winner(cid):
 
 @app.route("/fun/<int:cid>/clear", methods=["POST"])
 def clear_fun_winner(cid):
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("fun"))
     FunWinner.query.filter_by(category_id=cid).delete()
     db.session.commit()
     flash("Winner cleared.", "info")
@@ -354,17 +368,23 @@ def clear_fun_winner(cid):
 @app.route("/draw")
 def draw():
     participants_list = Participant.query.order_by(Participant.name).all()
-    assignments = Assignment.query.all()
     draw_done = Assignment.query.count() > 0
+    draw_pub = is_draw_public()
+    admin = is_admin()
 
+    assignments = Assignment.query.all() if (draw_pub or admin) else []
     assignments_data = []
-    if draw_done:
+    if draw_done and (draw_pub or admin):
+        facts = TEAM_FACTS
         for a in assignments:
+            team_facts = facts.get(a.team.code, ["A World Cup team!"])
             assignments_data.append({
                 "team": a.team.name,
                 "code": a.team.code,
+                "flag": a.team.flag_emoji or FLAG_EMOJIS.get(a.team.code, "🏳️"),
                 "group": a.team.group_name or "?",
                 "confederation": a.team.confederation or "",
+                "fact": random.choice(team_facts),
                 "participant": a.participant.name,
             })
         random.shuffle(assignments_data)
@@ -375,11 +395,16 @@ def draw():
         assignments=assignments,
         assignments_data=assignments_data,
         draw_done=draw_done,
+        draw_public=draw_pub,
+        is_admin=admin,
     )
 
 
 @app.route("/draw/run", methods=["POST"])
 def run_draw():
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("draw"))
     if Assignment.query.count() > 0:
         flash("Draw has already been run. Reset it first.", "warning")
         return redirect(url_for("draw"))
@@ -408,6 +433,9 @@ def run_draw():
 
 @app.route("/draw/reset", methods=["POST"])
 def reset_draw():
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("draw"))
     Assignment.query.delete()
     db.session.commit()
     flash("Draw reset.", "info")
@@ -422,75 +450,17 @@ def results():
     query = Match.query
     if stage_filter:
         query = query.filter_by(stage=stage_filter)
-    matches = query.order_by(Match.stage, Match.match_date).all()
+    matches = query.order_by(Match.match_date, Match.id).all()
     stages = [r[0] for r in db.session.query(Match.stage).distinct().all()]
-    teams = Team.query.order_by(Team.name).all()
     return render_template("results.html", matches=matches, stages=stages,
-                           teams=teams, stage_filter=stage_filter)
-
-
-@app.route("/results/add", methods=["POST"])
-def add_match():
-    home_id = request.form.get("home_team_id")
-    away_id = request.form.get("away_team_id")
-    if not home_id or not away_id or home_id == away_id:
-        flash("Select two different teams.", "danger")
-        return redirect(url_for("results"))
-    match_date = None
-    ds = request.form.get("match_date", "")
-    if ds:
-        try:
-            match_date = datetime.strptime(ds, "%Y-%m-%dT%H:%M")
-        except ValueError:
-            pass
-    db.session.add(Match(
-        home_team_id=int(home_id), away_team_id=int(away_id),
-        stage=request.form.get("stage", "Group Stage"),
-        venue=request.form.get("venue", "").strip() or None,
-        match_date=match_date,
-    ))
-    db.session.commit()
-    flash("Match added.", "success")
-    return redirect(url_for("results"))
-
-
-@app.route("/results/<int:mid>/score", methods=["POST"])
-def update_score(mid):
-    m = Match.query.get_or_404(mid)
-    m.home_score = int(request.form.get("home_score", 0))
-    m.away_score = int(request.form.get("away_score", 0))
-    hp = request.form.get("home_pens", "").strip()
-    ap = request.form.get("away_pens", "").strip()
-    if hp and ap:
-        m.home_penalties = int(hp)
-        m.away_penalties = int(ap)
-        m.penalty_winner_id = m.home_team_id if int(hp) > int(ap) else m.away_team_id
-    hy = request.form.get("home_yellows", "").strip()
-    ay = request.form.get("away_yellows", "").strip()
-    hr = request.form.get("home_reds", "").strip()
-    ar = request.form.get("away_reds", "").strip()
-    if hy: m.home_yellows = int(hy)
-    if ay: m.away_yellows = int(ay)
-    if hr: m.home_reds = int(hr)
-    if ar: m.away_reds = int(ar)
-    db.session.commit()
-    flash("Score updated.", "success")
-    return redirect(url_for("results"))
-
-
-@app.route("/results/<int:mid>/eliminate", methods=["POST"])
-def eliminate_team(mid):
-    m = Match.query.get_or_404(mid)
-    team = Team.query.get_or_404(int(request.form.get("team_id")))
-    team.eliminated = True
-    team.eliminated_stage = request.form.get("eliminated_stage", m.stage)
-    db.session.commit()
-    flash(f"{team.name} eliminated.", "info")
-    return redirect(url_for("results"))
+                           stage_filter=stage_filter, is_admin=is_admin())
 
 
 @app.route("/results/<int:mid>/delete", methods=["POST"])
 def delete_match(mid):
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("results"))
     db.session.delete(Match.query.get_or_404(mid))
     db.session.commit()
     flash("Match deleted.", "info")
@@ -522,6 +492,9 @@ def prizes():
 
 @app.route("/prizes/add", methods=["POST"])
 def add_prize():
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("prizes"))
     label = request.form.get("label", "").strip()
     if not label:
         flash("Prize label required.", "danger")
@@ -534,6 +507,9 @@ def add_prize():
 
 @app.route("/prizes/<int:pid>/payout", methods=["POST"])
 def payout_prize(pid):
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("prizes"))
     prize = Prize.query.get_or_404(pid)
     wid = request.form.get("winner_id")
     prize.winner_id = int(wid) if wid else None
@@ -545,6 +521,9 @@ def payout_prize(pid):
 
 @app.route("/prizes/<int:pid>/delete", methods=["POST"])
 def delete_prize(pid):
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("prizes"))
     db.session.delete(Prize.query.get_or_404(pid))
     db.session.commit()
     flash("Prize removed.", "info")
@@ -589,12 +568,66 @@ def lucky():
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
+def is_admin():
+    return session.get("is_admin", False)
+
+
+def is_draw_public():
+    s = AppSettings.query.get("draw_public")
+    return s and s.value == "true"
+
+
+def migrate_db():
+    """Add columns that exist in the models but not yet in the live DB.
+    db.create_all() creates missing TABLES but never adds columns to
+    pre-existing ones — so columns added in later releases need this."""
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    expected = {
+        "teams": {
+            "flag_emoji": "VARCHAR(10)",
+        },
+        "matches": {
+            "home_yellows": "INTEGER",
+            "away_yellows": "INTEGER",
+            "home_reds": "INTEGER",
+            "away_reds": "INTEGER",
+            "home_ht_score": "INTEGER",
+            "away_ht_score": "INTEGER",
+            "first_goal_team_id": "INTEGER",
+            "api_fixture_id": "INTEGER",
+            "cards_synced": "BOOLEAN",
+        },
+    }
+    for table, cols in expected.items():
+        if not inspector.has_table(table):
+            continue
+        existing = {c["name"] for c in inspector.get_columns(table)}
+        for col, coltype in cols.items():
+            if col not in existing:
+                try:
+                    db.session.execute(text(
+                        f"ALTER TABLE {table} ADD COLUMN {col} {coltype}"
+                    ))
+                    db.session.commit()
+                    print(f"Migrated: added {table}.{col}")
+                except Exception as exc:
+                    db.session.rollback()
+                    print(f"Migration skip {table}.{col}: {exc}")
+
+
 def init_db():
     db.create_all()
+    migrate_db()
     if Team.query.count() == 0:
         for t in TEAMS:
             db.session.add(Team(**t))
         db.session.commit()
+    # Backfill flag emojis for existing teams
+    for team in Team.query.all():
+        if not team.flag_emoji:
+            team.flag_emoji = FLAG_EMOJIS.get(team.code, "🏳️")
+    db.session.commit()
     if Participant.query.count() == 0:
         for p in PARTICIPANTS:
             db.session.add(Participant(**p))
@@ -607,6 +640,61 @@ def init_db():
             added = True
     if added:
         db.session.commit()
+    # Remove subjective categories — we only run objective, auto-calculated ones
+    subjective = FunCategory.query.filter(FunCategory.calc_key.is_(None)).all()
+    if subjective:
+        for cat in subjective:
+            FunWinner.query.filter_by(category_id=cat.id).delete()
+            db.session.delete(cat)
+        db.session.commit()
+
+
+# ── Admin auth ────────────────────────────────────────────────────────────────
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        pw = request.form.get("password", "")
+        if pw == os.environ.get("ADMIN_PASSWORD", "wc2026"):
+            session["is_admin"] = True
+            flash("Admin mode activated. 🔑", "success")
+            return redirect(request.form.get("next") or url_for("index"))
+        flash("Wrong password.", "danger")
+    return render_template("admin_login.html",
+                           next=request.args.get("next", ""))
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("is_admin", None)
+    flash("Logged out of admin.", "info")
+    return redirect(url_for("index"))
+
+
+@app.route("/admin/publish-draw", methods=["POST"])
+def publish_draw():
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("draw"))
+    s = AppSettings.query.get("draw_public") or AppSettings(key="draw_public")
+    s.value = "true"
+    db.session.merge(s)
+    db.session.commit()
+    flash("Draw published! Everyone can now see the assignments.", "success")
+    return redirect(url_for("draw"))
+
+
+@app.route("/admin/unpublish-draw", methods=["POST"])
+def unpublish_draw():
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("draw"))
+    s = AppSettings.query.get("draw_public") or AppSettings(key="draw_public")
+    s.value = "false"
+    db.session.merge(s)
+    db.session.commit()
+    flash("Draw hidden from public.", "info")
+    return redirect(url_for("draw"))
 
 
 with app.app_context():

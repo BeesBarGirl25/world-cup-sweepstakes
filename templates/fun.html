@@ -40,7 +40,7 @@
           </div>
           {% for t in leaders %}
           <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-            <span class="team-pill"><span class="tla">{{ t.code }}</span> {{ t.name }}</span>
+            <span class="team-pill">{{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }} <span class="tla">{{ t.code }}</span> {{ t.name }}</span>
             {% for a in t.assignments %}
             <span class="owner-chip">{{ a.participant.name.split()[0] }}</span>
             {% endfor %}
@@ -49,29 +49,10 @@
         </div>
         {% else %}
         <div style="color:var(--text-dim);font-size:.82rem;margin-bottom:.75rem;flex-grow:1">
-          <i class="bi bi-hourglass me-1"></i>{% if is_auto %}No match data yet{% else %}Awaiting admin assignment{% endif %}
+          <i class="bi bi-hourglass me-1"></i>No match data yet — updates automatically
         </div>
         {% endif %}
       </div>
-
-      {% if not is_auto %}
-      <div class="card-footer">
-        <form method="POST" action="{{ url_for('set_fun_winner', cid=cat.id) }}" class="d-flex gap-2">
-          <select name="team_id" class="form-select form-select-sm" required>
-            <option value="">Assign winner…</option>
-            {% for t in teams %}
-            <option value="{{ t.id }}" {% if leaders and t in leaders %}selected{% endif %}>{{ t.name }}</option>
-            {% endfor %}
-          </select>
-          <button class="btn btn-gold btn-sm text-nowrap">Set</button>
-        </form>
-        {% if leaders %}
-        <form method="POST" action="{{ url_for('clear_fun_winner', cid=cat.id) }}" class="mt-1">
-          <button class="btn btn-outline-danger btn-sm w-100" style="font-size:.75rem">Clear</button>
-        </form>
-        {% endif %}
-      </div>
-      {% endif %}
     </div>
   </div>
   {% endfor %}

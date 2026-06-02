@@ -3,50 +3,86 @@
 
 {% block content %}
 <div class="d-flex align-items-center mb-4 gap-3">
-  <h1 class="h4 mb-0">
-    <i class="bi bi-people me-2" style="color:var(--gold)"></i>Players
-  </h1>
-  <span class="ms-auto badge bg-surface">{{ participants | length }} players</span>
-  <span class="badge" style="background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,165,0,0.3)">
-    £{{ "%.0f"|format(summary.pot) }} pot
-  </span>
+  <h1 class="h4 mb-0"><i class="bi bi-people me-2" style="color:var(--gold)"></i>Players</h1>
+  <span class="ms-auto badge bg-surface">{{ participants | length }} players &middot; £{{ summary.pot | int }} pot</span>
 </div>
 
-<div class="row g-3 stagger">
+<!-- Search bar -->
+<div class="mb-4" style="max-width:500px">
+  <div class="input-group">
+    <span class="input-group-text" style="background:var(--bg-card);border-color:var(--border)">
+      <i class="bi bi-search" style="color:var(--text-muted)"></i>
+    </span>
+    <input type="text" id="player-search" class="form-control" placeholder="Search by name…"
+           oninput="filterPlayers(this.value)">
+    <select class="form-select" id="player-dropdown" onchange="jumpToPlayer(this.value)"
+            style="max-width:200px">
+      <option value="">— or pick a player —</option>
+      {% for p in participants | sort(attribute='name') %}
+      <option value="{{ p.id }}">{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<!-- Player cards grid -->
+<div class="row g-3 stagger" id="player-grid">
   {% for p in participants | sort(attribute='total_points', reverse=True) %}
-  <div class="col-sm-6 col-lg-4 col-xl-3">
-    <div class="participant-card h-100">
-      <div class="d-flex align-items-start justify-content-between mb-2">
-        <div>
-          <div class="p-name" {% if p.name == 'Martin Durchov' %}title="🕵️ Man of Mystery — paid £10.39" style="cursor:help"{% endif %}{% if p.name == 'Alex Wood' %}title="🎰 High Roller — 5 entries!" style="cursor:help"{% endif %}>{{ p.name }}{% if p.name == 'Martin Durchov' %} <span style="font-size:.65rem;color:var(--text-dim)">🕵️</span>{% endif %}{% if p.name == 'Alex Wood' %} <span style="font-size:.65rem;color:var(--gold)">🎰</span>{% endif %}</div>
-          <div class="p-entries">
-            {{ (p.entry_fee_paid / 5) | int }} entr{{ 'y' if (p.entry_fee_paid / 5) | int == 1 else 'ies' }}
-            &middot; £{{ p.entry_fee_paid | int }}
+  <div class="col-sm-6 col-lg-4 col-xl-3 player-card-wrap" data-name="{{ p.name | lower }}">
+    <a href="{{ url_for('player_profile', pid=p.id) }}" class="text-decoration-none">
+      <div class="participant-card h-100">
+        <div class="d-flex align-items-start justify-content-between mb-2">
+          <div>
+            <div class="p-name" {% if p.name == 'Martin Durchov' %}title="🕵️ Man of Mystery — paid £10.39" style="cursor:help"{% endif %}
+                 {% if p.name == 'Alex Wood' %}title="🎰 High Roller — 5 entries" style="cursor:help"{% endif %}>
+              {{ p.name }}
+              {% if p.name == 'Martin Durchov' %}<span style="font-size:.65rem">🕵️</span>{% endif %}
+              {% if p.name == 'Alex Wood' %}<span style="font-size:.65rem;color:var(--gold)">🎰</span>{% endif %}
+            </div>
+            <div class="p-entries">
+              {{ p.entries }} entr{{ 'y' if p.entries == 1 else 'ies' }} &middot; £{{ p.entry_fee_paid | int }}
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="p-pts">{{ p.total_points }}</div>
+            <div style="font-size:.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em">pts</div>
           </div>
         </div>
-        <div class="text-end">
-          <div class="p-pts">{{ p.total_points }}</div>
-          <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em">pts</div>
+        {% if p.teams %}
+        <div class="d-flex flex-wrap gap-1 mt-1">
+          {% for t in p.teams | sort(attribute='eliminated') %}
+          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}" title="{{ t.name }}">
+            {{ t.flag_emoji or FLAG_EMOJIS.get(t.code, '') }} <span class="tla">{{ t.code }}</span>
+          </span>
+          {% endfor %}
         </div>
+        {% else %}
+        <div style="font-size:.8rem;color:var(--text-dim)"><i class="bi bi-hourglass me-1"></i>Awaiting draw</div>
+        {% endif %}
       </div>
-
-      {% if p.teams %}
-      <div class="mt-2 d-flex flex-wrap gap-1">
-        {% for t in p.teams | sort(attribute='eliminated') %}
-        <span class="team-pill {% if t.eliminated %}eliminated{% endif %}" title="{{ t.name }}">
-          <span class="tla">{{ t.code }}</span>
-          {{ t.name }}
-          {% if t.eliminated %}<i class="bi bi-x-circle-fill" style="color:var(--red);font-size:0.7rem"></i>{% endif %}
-        </span>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="mt-2" style="font-size:0.8rem;color:var(--text-dim)">
-        <i class="bi bi-hourglass me-1"></i>Awaiting draw
-      </div>
-      {% endif %}
-    </div>
+    </a>
   </div>
   {% endfor %}
 </div>
+
+<div id="no-results" style="display:none" class="alert alert-info mt-3">No players match that search.</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterPlayers(q) {
+  q = q.toLowerCase().trim();
+  let found = 0;
+  document.querySelectorAll('.player-card-wrap').forEach(el => {
+    const match = !q || el.dataset.name.includes(q);
+    el.style.display = match ? '' : 'none';
+    if (match) found++;
+  });
+  document.getElementById('no-results').style.display = found ? 'none' : '';
+}
+function jumpToPlayer(pid) {
+  if (pid) window.location = '/player/' + pid;
+}
+</script>
 {% endblock %}
