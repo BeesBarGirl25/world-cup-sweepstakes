@@ -3,78 +3,110 @@
 
 {% block content %}
 <div class="d-flex align-items-center mb-4">
-  <h1 class="h3 mb-0 me-auto"><i class="bi bi-bar-chart-line me-2"></i>Sweepstakes Leaderboard</h1>
+  <h1 class="h4 mb-0"><i class="bi bi-bar-chart-line me-2" style="color:var(--gold)"></i>Leaderboard</h1>
 </div>
 
-<div class="mb-3 small text-muted">
+<div class="alert alert-info mb-4" style="font-size:0.82rem">
+  <i class="bi bi-info-circle me-1"></i>
   <strong>Scoring:</strong>
-  Group stage win = 1pt &bull; Round of 32 exit = 2pts &bull; Round of 16 = 4pts &bull; QF = 7pts &bull; SF = 11pts &bull; Runner-up = 15pts &bull; Champion = 20pts
+  Group win = 1pt &nbsp;&bull;&nbsp; R32 exit = 2pts &nbsp;&bull;&nbsp; R16 = 4pts &nbsp;&bull;&nbsp;
+  QF = 7pts &nbsp;&bull;&nbsp; SF = 11pts &nbsp;&bull;&nbsp; Runner-up = 15pts &nbsp;&bull;&nbsp; Champion = 20pts
 </div>
 
 {% if not draw_done %}
 <div class="alert alert-warning">
-  <i class="bi bi-info-circle me-1"></i>
-  The draw hasn't been run yet. <a href="{{ url_for('draw') }}">Go to the Draw page →</a>
+  <i class="bi bi-shuffle me-1"></i>
+  Draw hasn't been run yet. <a href="{{ url_for('draw') }}" style="color:inherit;font-weight:600">Go to Draw →</a>
 </div>
-{% elif standings %}
 
+{% elif standings %}
+<!-- Podium top 3 -->
+{% if standings | length >= 3 %}
 <div class="row g-3 mb-4">
-  {% for p in standings[:3] %}
-  {% set medals = ['gold', 'silver', '#cd7f32'] %}
-  {% set icons = ['🥇', '🥈', '🥉'] %}
   <div class="col-md-4">
-    <div class="card border-0 shadow h-100 {% if loop.index == 1 %}border-warning border-2{% endif %}">
-      <div class="card-body text-center">
-        <div class="display-4 mb-1">{{ icons[loop.index0] }}</div>
-        <h5 class="card-title mb-1">{{ p.name }}</h5>
-        <div class="display-6 fw-bold text-success">{{ p.total_points }}</div>
-        <div class="small text-muted">points</div>
-        <div class="mt-2">
-          {% for t in p.teams %}
-          <span class="badge {% if t.eliminated %}bg-secondary{% else %}bg-success{% endif %} me-1">{{ t.code }}</span>
-          {% endfor %}
-        </div>
+    <div class="podium-card podium-1">
+      <div class="podium-medal">🥇</div>
+      <div class="podium-name">{{ standings[0].name }}</div>
+      <div class="podium-pts">{{ standings[0].total_points }}</div>
+      <div class="podium-pts-label">points</div>
+      <div class="mt-2 d-flex flex-wrap justify-content-center gap-1">
+        {% for t in standings[0].teams %}
+          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}"><span class="tla">{{ t.code }}</span></span>
+        {% endfor %}
       </div>
     </div>
   </div>
-  {% endfor %}
+  <div class="col-md-4">
+    <div class="podium-card podium-2">
+      <div class="podium-medal">🥈</div>
+      <div class="podium-name">{{ standings[1].name }}</div>
+      <div class="podium-pts">{{ standings[1].total_points }}</div>
+      <div class="podium-pts-label">points</div>
+      <div class="mt-2 d-flex flex-wrap justify-content-center gap-1">
+        {% for t in standings[1].teams %}
+          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}"><span class="tla">{{ t.code }}</span></span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="podium-card podium-3">
+      <div class="podium-medal">🥉</div>
+      <div class="podium-name">{{ standings[2].name }}</div>
+      <div class="podium-pts">{{ standings[2].total_points }}</div>
+      <div class="podium-pts-label">points</div>
+      <div class="mt-2 d-flex flex-wrap justify-content-center gap-1">
+        {% for t in standings[2].teams %}
+          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}"><span class="tla">{{ t.code }}</span></span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
 </div>
+{% endif %}
 
-<table class="table table-hover align-middle shadow-sm bg-white">
-  <thead class="table-dark">
-    <tr>
-      <th width="50">Rank</th>
-      <th>Participant</th>
-      <th>Teams</th>
-      <th>Points</th>
-      <th>Teams alive</th>
-    </tr>
-  </thead>
+{% set max_pts = standings[0].total_points if standings[0].total_points > 0 else 1 %}
+
+<!-- Full table -->
+<table class="table lb-table w-100">
   <tbody>
     {% for p in standings %}
-    <tr {% if loop.index <= 3 %}class="table-light fw-semibold"{% endif %}>
-      <td class="text-center">
+    <tr class="lb-row">
+      <td class="rank-num">
         {% if loop.index == 1 %}🥇
         {% elif loop.index == 2 %}🥈
         {% elif loop.index == 3 %}🥉
         {% else %}{{ loop.index }}{% endif %}
       </td>
-      <td>{{ p.name }}</td>
+      <td style="font-weight:600">{{ p.name }}</td>
       <td>
-        {% for t in p.teams | sort(attribute='eliminated') %}
-        <span class="badge {% if t.eliminated %}bg-secondary{% else %}bg-success{% endif %} me-1" title="{{ t.name }}">
-          {{ t.code }}
-        </span>
-        {% endfor %}
+        <div class="d-flex flex-wrap gap-1">
+          {% for t in p.teams | sort(attribute='eliminated') %}
+          <span class="team-pill {% if t.eliminated %}eliminated{% endif %}" title="{{ t.name }}">
+            <span class="tla">{{ t.code }}</span>
+          </span>
+          {% endfor %}
+        </div>
       </td>
-      <td class="fw-bold text-success fs-5">{{ p.total_points }}</td>
-      <td>{{ p.teams | selectattr('eliminated', 'equalto', false) | list | length }}/{{ p.teams | length }}</td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div class="pts-bar-wrap">
+            <div class="pts-bar" style="width:{{ [(p.total_points / max_pts * 100), 100] | min }}%"></div>
+          </div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--gold);min-width:36px">
+            {{ p.total_points }}
+          </span>
+        </div>
+      </td>
+      <td class="text-muted" style="font-size:0.8rem">
+        {{ p.teams | selectattr('eliminated', 'equalto', false) | list | length }}/{{ p.teams | length }} alive
+      </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 
 {% else %}
-<div class="alert alert-info">No participants yet. <a href="{{ url_for('participants') }}">Add some →</a></div>
+<div class="alert alert-info">No participants yet.</div>
 {% endif %}
 {% endblock %}

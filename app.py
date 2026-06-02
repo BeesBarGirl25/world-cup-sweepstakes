@@ -1,5 +1,6 @@
 import os
 import random
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from models import db, Team, Participant, Assignment, Match, Prize
 from seed_data import TEAMS, PARTICIPANTS
@@ -7,9 +8,8 @@ from seed_data import TEAMS, PARTICIPANTS
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
 
-# Database configuration — PostgreSQL on Heroku, SQLite locally
 database_url = os.environ.get("DATABASE_URL", "sqlite:///sweepstakes.db")
-if database_url.startswith("postgres://"):  # Heroku uses deprecated prefix
+if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -24,7 +24,7 @@ def get_sweepstakes_summary():
     return {"pot": total_pot, "allocated": prizes_allocated}
 
 
-# ── Routes ──────────────────────────────────────────────────────────────────
+# ── Dashboard ────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -35,7 +35,7 @@ def index():
     recent_matches = (
         Match.query.filter(Match.home_score.isnot(None))
         .order_by(Match.id.desc())
-        .limit(5)
+        .limit(6)
         .all()
     )
     upcoming = (
@@ -45,16 +45,18 @@ def index():
         .all()
     )
     summary = get_sweepstakes_summary()
+    last_sync = _last_sync_time()
     return render_template(
         "index.html",
         groups=groups,
         recent_matches=recent_matches,
         upcoming=upcoming,
         summary=summary,
+        last_sync=last_sync,
     )
 
 
-# ── Participants ─────────────────────────────────────────────────────────────
+# ── Participants (read-only) ──────────────────────────────────────────────────
 
 @app.route("/participants")
 def participants():
@@ -63,55 +65,16 @@ def participants():
     return render_template("participants.html", participants=people, summary=summary)
 
 
-@app.route("/participants/add", methods=["POST"])
-def add_participant():
-    name = request.form.get("name", "").strip()
-    fee = request.form.get("fee", 0)
-    if not name:
-        flash("Name is required.", "danger")
-        return redirect(url_for("participants"))
-    if Participant.query.filter_by(name=name).first():
-        flash(f"'{name}' already exists.", "warning")
-        return redirect(url_for("participants"))
-    p = Participant(name=name, entry_fee_paid=float(fee))
-    db.session.add(p)
-    db.session.commit()
-    flash(f"Added {name}.", "success")
-    return redirect(url_for("participants"))
-
-
-@app.route("/participants/<int:pid>/delete", methods=["POST"])
-def delete_participant(pid):
-    p = Participant.query.get_or_404(pid)
-    db.session.delete(p)
-    db.session.commit()
-    flash(f"Removed {p.name}.", "info")
-    return redirect(url_for("participants"))
-
-
-@app.route("/participants/<int:pid>/fee", methods=["POST"])
-def update_fee(pid):
-    p = Participant.query.get_or_404(pid)
-    p.entry_fee_paid = float(request.form.get("fee", 0))
-    db.session.commit()
-    flash(f"Updated fee for {p.name}.", "success")
-    return redirect(url_for("participants"))
-
-
 # ── Draw ─────────────────────────────────────────────────────────────────────
 
 @app.route("/draw")
 def draw():
-    participants = Participant.query.order_by(Participant.name).all()
-    unassigned_teams = Team.query.filter(~Team.id.in_(
-        db.session.query(Assignment.team_id)
-    )).order_by(Team.name).all()
-    assignments = Assignment.query.order_by(Assignment.drawn_at).all()
+    participants_list = Participant.query.order_by(Participant.name).all()
+    assignments = Assignment.query.all()
     draw_done = Assignment.query.count() > 0
     return render_template(
         "draw.html",
-        participants=participants,
-        unassigned_teams=unassigned_teams,
+        participants=participants_list,
         assignments=assignments,
         draw_done=draw_done,
     )
@@ -123,22 +86,20 @@ def run_draw():
         flash("Draw has already been run. Reset it first.", "warning")
         return redirect(url_for("draw"))
 
-    participants = Participant.query.all()
+    participants_list = Participant.query.all()
     teams = Team.query.all()
 
-    if not participants:
-        flash("Add participants before running the draw.", "danger")
+    if not participants_list:
+        flash("No participants to draw for.", "danger")
         return redirect(url_for("draw"))
 
-    # Build a weighted pool: each participant appears once per £5 entry
     pool = []
-    for p in participants:
+    for p in participants_list:
         entries = max(1, round(p.entry_fee_paid / 5))
         pool.extend([p] * entries)
     random.shuffle(pool)
     random.shuffle(teams)
-    # Assign every pool slot a team (cycling through teams so all entries get one)
-    # Teams get multiple owners when entries > teams — that's intentional
+
     assigned_pairs = set()
     for i, participant in enumerate(pool):
         team = teams[i % len(teams)]
@@ -171,7 +132,15 @@ def results():
     matches = query.order_by(Match.stage, Match.match_date).all()
     stages = [r[0] for r in db.session.query(Match.stage).distinct().all()]
     teams = Team.query.order_by(Team.name).all()
-    return render_template("results.html", matches=matches, stages=stages, teams=teams, stage_filter=stage_filter)
+    last_sync = _last_sync_time()
+    return render_template(
+        "results.html",
+        matches=matches,
+        stages=stages,
+        teams=teams,
+        stage_filter=stage_filter,
+        last_sync=last_sync,
+    )
 
 
 @app.route("/results/add", methods=["POST"])
@@ -186,7 +155,6 @@ def add_match():
         flash("Select two different teams.", "danger")
         return redirect(url_for("results"))
 
-    from datetime import datetime
     match_date = None
     if match_date_str:
         try:
@@ -218,7 +186,9 @@ def update_score(mid):
     if home_pens and away_pens:
         m.home_penalties = int(home_pens)
         m.away_penalties = int(away_pens)
-        m.penalty_winner_id = m.home_team_id if int(home_pens) > int(away_pens) else m.away_team_id
+        m.penalty_winner_id = (
+            m.home_team_id if int(home_pens) > int(away_pens) else m.away_team_id
+        )
 
     db.session.commit()
     flash("Score updated.", "success")
@@ -234,7 +204,7 @@ def eliminate_team(mid):
     team.eliminated = True
     team.eliminated_stage = stage
     db.session.commit()
-    flash(f"{team.name} marked as eliminated at {stage}.", "info")
+    flash(f"{team.name} eliminated at {stage}.", "info")
     return redirect(url_for("results"))
 
 
@@ -251,8 +221,8 @@ def delete_match(mid):
 
 @app.route("/leaderboard")
 def leaderboard():
-    participants = Participant.query.all()
-    standings = sorted(participants, key=lambda p: p.total_points, reverse=True)
+    participants_list = Participant.query.all()
+    standings = sorted(participants_list, key=lambda p: p.total_points, reverse=True)
     draw_done = Assignment.query.count() > 0
     return render_template("leaderboard.html", standings=standings, draw_done=draw_done)
 
@@ -261,10 +231,12 @@ def leaderboard():
 
 @app.route("/prizes")
 def prizes():
-    prizes = Prize.query.all()
-    participants = Participant.query.order_by(Participant.name).all()
+    prizes_list = Prize.query.all()
+    participants_list = Participant.query.order_by(Participant.name).all()
     summary = get_sweepstakes_summary()
-    return render_template("prizes.html", prizes=prizes, participants=participants, summary=summary)
+    return render_template(
+        "prizes.html", prizes=prizes_list, participants=participants_list, summary=summary
+    )
 
 
 @app.route("/prizes/add", methods=["POST"])
@@ -287,7 +259,7 @@ def payout_prize(pid):
     prize.winner_id = int(winner_id) if winner_id else None
     prize.paid_out = True
     db.session.commit()
-    flash(f"Prize '{prize.label}' marked as paid out.", "success")
+    flash(f"'{prize.label}' marked as paid out.", "success")
     return redirect(url_for("prizes"))
 
 
@@ -300,12 +272,29 @@ def delete_prize(pid):
     return redirect(url_for("prizes"))
 
 
+# ── Sync ─────────────────────────────────────────────────────────────────────
+
+@app.route("/admin/sync", methods=["POST"])
+def admin_sync():
+    from sync import sync_fixtures
+    result = sync_fixtures(app)
+    if result.get("error"):
+        flash(f"Sync failed: {result['error']}", "danger")
+    else:
+        flash(
+            f"Sync complete — {result['created']} new, {result['updated']} updated "
+            f"({result['skipped']} unmatched teams).",
+            "success",
+        )
+    return redirect(request.referrer or url_for("results"))
+
+
 # ── API ───────────────────────────────────────────────────────────────────────
 
 @app.route("/api/leaderboard")
 def api_leaderboard():
-    participants = Participant.query.all()
-    standings = sorted(participants, key=lambda p: p.total_points, reverse=True)
+    participants_list = Participant.query.all()
+    standings = sorted(participants_list, key=lambda p: p.total_points, reverse=True)
     return jsonify([
         {
             "rank": i + 1,
@@ -315,6 +304,13 @@ def api_leaderboard():
         }
         for i, p in enumerate(standings)
     ])
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _last_sync_time():
+    latest = Match.query.filter(Match.home_score.isnot(None)).order_by(Match.id.desc()).first()
+    return None
 
 
 # ── Init ──────────────────────────────────────────────────────────────────────
@@ -335,6 +331,20 @@ def init_db():
 
 with app.app_context():
     init_db()
+
+# Background scheduler — polls football-data.org every 3 hours
+# Only start outside Flask reloader child process to avoid duplicate jobs
+import os as _os
+if not app.debug or _os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from sync import sync_fixtures as _sync
+
+        _scheduler = BackgroundScheduler(daemon=True)
+        _scheduler.add_job(lambda: _sync(app), "interval", hours=3, id="sync_fixtures")
+        _scheduler.start()
+    except Exception as _e:
+        print(f"Scheduler not started: {_e}")
 
 if __name__ == "__main__":
     app.run(debug=True)
