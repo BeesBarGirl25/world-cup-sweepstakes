@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Draw – WC 2026{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0 me-auto"><i class="bi bi-shuffle me-2"></i>Sweepstakes Draw</h1>
+  <div class="d-flex gap-2">
+    {% if not draw_done %}
+    <form method="POST" action="{{ url_for('run_draw') }}">
+      <button class="btn btn-success" {% if not participants %}disabled{% endif %}>
+        <i class="bi bi-play-fill me-1"></i>Run Draw
+      </button>
+    </form>
+    {% else %}
+    <form method="POST" action="{{ url_for('reset_draw') }}"
+          onsubmit="return confirm('Reset the entire draw? All assignments will be lost.')">
+      <button class="btn btn-outline-danger">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Draw
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if not participants %}
+<div class="alert alert-warning">
+  <i class="bi bi-exclamation-triangle me-1"></i>
+  Add participants on the <a href="{{ url_for('participants') }}">Participants page</a> before running the draw.
+</div>
+{% endif %}
+
+{% if draw_done %}
+<div class="row g-4">
+  {% for p in participants %}
+  <div class="col-sm-6 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">{{ p.name }}</span>
+        <span class="badge bg-success">{{ p.teams | length }} team{{ 's' if p.teams | length != 1 }}</span>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for team in p.teams | sort(attribute='group_name') %}
+        <li class="list-group-item d-flex justify-content-between align-items-center
+                    {% if team.eliminated %}text-muted{% endif %}">
+          <span>
+            <span class="badge bg-secondary font-monospace me-2">{{ team.code }}</span>{{ team.name }}
+            {% if team.eliminated %}
+              <span class="badge bg-danger ms-1 small">{{ team.eliminated_stage }}</span>
+            {% endif %}
+          </span>
+          <span class="small text-muted">Grp {{ team.group_name }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="card-footer bg-light text-end">
+        <span class="fw-bold text-success">{{ p.total_points }} pts</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="row g-4 mt-2">
+  <div class="col-lg-6">
+    <h5>{{ participants | length }} Participant{{ 's' if participants | length != 1 }}</h5>
+    <ul class="list-group shadow-sm">
+      {% for p in participants %}
+      <li class="list-group-item">{{ p.name }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="col-lg-6">
+    <h5>{{ unassigned_teams | length }} Undrawn Teams</h5>
+    <div class="d-flex flex-wrap gap-1">
+      {% for t in unassigned_teams %}
+      <span class="badge bg-secondary">{{ t.code }}</span>
+      {% endfor %}
+    </div>
+    {% if participants %}
+    <p class="text-muted small mt-3">
+      {{ unassigned_teams | length }} teams ÷ {{ participants | length }} participants
+      = ~{{ (unassigned_teams | length / participants | length) | round(1) }} teams each
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

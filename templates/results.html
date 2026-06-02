@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Results – WC 2026{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0 me-auto"><i class="bi bi-calendar-check me-2"></i>Match Results</h1>
+</div>
+
+<div class="row g-4">
+  <!-- Add match form -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">Add Match</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('add_match') }}">
+          <div class="mb-2">
+            <label class="form-label small">Stage</label>
+            <select name="stage" class="form-select form-select-sm">
+              <option>Group Stage</option>
+              <option>Round of 32</option>
+              <option>Round of 16</option>
+              <option>Quarter-final</option>
+              <option>Semi-final</option>
+              <option>Runner-up</option>
+              <option>Final</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Home team</label>
+            <select name="home_team_id" class="form-select form-select-sm" required>
+              {% for t in teams %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Away team</label>
+            <select name="away_team_id" class="form-select form-select-sm" required>
+              {% for t in teams %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Date/time (optional)</label>
+            <input type="datetime-local" name="match_date" class="form-control form-control-sm">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small">Venue (optional)</label>
+            <input type="text" name="venue" class="form-control form-control-sm" placeholder="e.g. MetLife Stadium">
+          </div>
+          <button class="btn btn-success btn-sm w-100">Add Match</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Match list -->
+  <div class="col-lg-8">
+    <!-- Stage filter -->
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+      <a href="{{ url_for('results') }}" class="btn btn-sm {% if not stage_filter %}btn-dark{% else %}btn-outline-dark{% endif %}">All</a>
+      {% for s in stages %}
+      <a href="{{ url_for('results', stage=s) }}" class="btn btn-sm {% if stage_filter == s %}btn-dark{% else %}btn-outline-dark{% endif %}">{{ s }}</a>
+      {% endfor %}
+    </div>
+
+    {% if matches %}
+    {% set ns = namespace(current_stage='') %}
+    {% for m in matches %}
+      {% if m.stage != ns.current_stage %}
+        {% set ns.current_stage = m.stage %}
+        <h6 class="text-muted mt-3 mb-2 text-uppercase small fw-semibold">{{ m.stage }}</h6>
+      {% endif %}
+
+      <div class="card border-0 shadow-sm mb-2">
+        <div class="card-body py-2">
+          <div class="row align-items-center g-2">
+            <div class="col">
+              <span class="fw-semibold">{{ m.home_team.name }}</span>
+              <span class="text-muted small ms-1">({{ m.home_team.code }})</span>
+            </div>
+            <div class="col-auto text-center">
+              {% if m.played %}
+                <span class="badge bg-dark fs-6 px-3">{{ m.result_string }}</span>
+              {% else %}
+                <span class="text-muted">vs</span>
+              {% endif %}
+            </div>
+            <div class="col text-end">
+              <span class="fw-semibold">{{ m.away_team.name }}</span>
+              <span class="text-muted small ms-1">({{ m.away_team.code }})</span>
+            </div>
+          </div>
+
+          {% if m.venue or m.match_date %}
+          <div class="small text-muted mt-1">
+            {% if m.match_date %}{{ m.match_date.strftime('%d %b %Y %H:%M') }}{% endif %}
+            {% if m.venue %}&nbsp;@ {{ m.venue }}{% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Score entry / elimination -->
+          <div class="d-flex gap-2 mt-2 flex-wrap">
+            <form method="POST" action="{{ url_for('update_score', mid=m.id) }}" class="d-flex gap-1 align-items-center">
+              <input type="number" name="home_score" class="form-control form-control-sm" style="width:55px"
+                     value="{{ m.home_score if m.home_score is not none else '' }}" min="0" placeholder="H">
+              <span>-</span>
+              <input type="number" name="away_score" class="form-control form-control-sm" style="width:55px"
+                     value="{{ m.away_score if m.away_score is not none else '' }}" min="0" placeholder="A">
+              <input type="number" name="home_pens" class="form-control form-control-sm" style="width:50px"
+                     value="{{ m.home_penalties if m.home_penalties is not none else '' }}" min="0" placeholder="HP"
+                     title="Home penalties">
+              <input type="number" name="away_pens" class="form-control form-control-sm" style="width:50px"
+                     value="{{ m.away_penalties if m.away_penalties is not none else '' }}" min="0" placeholder="AP"
+                     title="Away penalties">
+              <button class="btn btn-sm btn-outline-success"><i class="bi bi-check"></i></button>
+            </form>
+
+            {% if m.stage != 'Group Stage' and m.played %}
+            <form method="POST" action="{{ url_for('eliminate_team', mid=m.id) }}" class="d-flex gap-1">
+              <select name="team_id" class="form-select form-select-sm" style="width:auto">
+                <option value="{{ m.home_team_id }}">{{ m.home_team.name }}</option>
+                <option value="{{ m.away_team_id }}">{{ m.away_team.name }}</option>
+              </select>
+              <input type="hidden" name="eliminated_stage" value="{{ m.stage }}">
+              <button class="btn btn-sm btn-outline-danger" title="Mark team as eliminated">
+                <i class="bi bi-x-circle"></i> Out
+              </button>
+            </form>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('delete_match', mid=m.id) }}"
+                  onsubmit="return confirm('Delete this match?')" class="ms-auto">
+              <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-info mt-3">No matches yet. Add one using the form.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

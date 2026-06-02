@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Participants – WC 2026{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0 me-auto"><i class="bi bi-people me-2"></i>Participants</h1>
+  <span class="badge bg-success fs-6">Pot: £{{ "%.2f"|format(summary.pot) }}</span>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-dark text-white">Add Participant</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('add_participant') }}">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Dave" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Entry fee paid (£)</label>
+            <input type="number" name="fee" class="form-control" value="10" min="0" step="0.01">
+          </div>
+          <button class="btn btn-success w-100">Add</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    {% if participants %}
+    <table class="table table-hover align-middle shadow-sm bg-white rounded">
+      <thead class="table-dark">
+        <tr>
+          <th>Name</th>
+          <th>Entry fee</th>
+          <th>Teams</th>
+          <th>Points</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in participants %}
+        <tr>
+          <td class="fw-semibold">{{ p.name }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('update_fee', pid=p.id) }}" class="d-flex gap-1">
+              <div class="input-group input-group-sm" style="width:120px">
+                <span class="input-group-text">£</span>
+                <input type="number" name="fee" class="form-control" value="{{ p.entry_fee_paid }}" min="0" step="0.01">
+              </div>
+              <button class="btn btn-outline-secondary btn-sm">Save</button>
+            </form>
+          </td>
+          <td>
+            {% if p.teams %}
+              {% for t in p.teams %}
+                <span class="badge bg-secondary me-1">{{ t.code }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted small">no draw yet</span>
+            {% endif %}
+          </td>
+          <td><span class="fw-bold text-success">{{ p.total_points }}</span></td>
+          <td>
+            <form method="POST" action="{{ url_for('delete_participant', pid=p.id) }}"
+                  onsubmit="return confirm('Remove {{ p.name }}?')">
+              <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="table-light">
+        <tr>
+          <td colspan="2" class="fw-bold">Total pot</td>
+          <td colspan="3" class="fw-bold text-success">£{{ "%.2f"|format(summary.pot) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+    {% else %}
+    <div class="alert alert-info">No participants yet. Add some using the form.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

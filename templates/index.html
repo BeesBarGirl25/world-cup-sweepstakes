@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – WC 2026 Sweepstakes{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0 me-auto">
+    <i class="bi bi-globe-americas text-success me-2"></i>2026 FIFA World Cup
+  </h1>
+  <div class="text-muted small">
+    <i class="bi bi-piggy-bank me-1"></i>Pot: <strong class="text-success">£{{ "%.2f"|format(summary.pot) }}</strong>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body">
+        <div class="display-6 fw-bold text-success">{{ summary.pot | int }}</div>
+        <div class="small text-muted">Prize pot (£)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body">
+        <div class="display-6 fw-bold text-primary">
+          {{ recent_matches | length + upcoming | length }}
+        </div>
+        <div class="small text-muted">Matches tracked</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body">
+        <div class="display-6 fw-bold text-warning">
+          {{ groups | length }}
+        </div>
+        <div class="small text-muted">Groups</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card text-center border-0 shadow-sm">
+      <div class="card-body">
+        <div class="display-6 fw-bold text-danger">{{ recent_matches | length }}</div>
+        <div class="small text-muted">Results entered</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Groups -->
+  <div class="col-lg-8">
+    <h5 class="mb-3"><i class="bi bi-grid me-1"></i>Group Stage</h5>
+    <div class="row g-3">
+      {% for group_name, teams in groups | dictsort %}
+      <div class="col-sm-6 col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-dark text-white fw-semibold py-2">
+            Group {{ group_name }}
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for team in teams %}
+            <li class="list-group-item d-flex align-items-center justify-content-between
+                        {% if team.eliminated %}text-muted{% endif %}">
+              <span>
+                <span class="badge bg-secondary me-1 font-monospace">{{ team.code }}</span>
+                {{ team.name }}
+                {% if team.eliminated %}
+                  <span class="badge bg-danger ms-1 small">out</span>
+                {% endif %}
+              </span>
+              <span class="badge bg-light text-dark border">{{ team.points }}pts</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    {% if recent_matches %}
+    <h5 class="mb-3"><i class="bi bi-check2-circle me-1"></i>Recent Results</h5>
+    <div class="list-group mb-4 shadow-sm">
+      {% for m in recent_matches %}
+      <div class="list-group-item list-group-item-action py-2">
+        <div class="small text-muted mb-1">{{ m.stage }}</div>
+        <div class="d-flex align-items-center justify-content-between">
+          <span class="fw-semibold">{{ m.home_team.name }}</span>
+          <span class="badge bg-dark mx-2">{{ m.result_string }}</span>
+          <span class="fw-semibold">{{ m.away_team.name }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if upcoming %}
+    <h5 class="mb-3"><i class="bi bi-calendar me-1"></i>Upcoming</h5>
+    <div class="list-group shadow-sm">
+      {% for m in upcoming %}
+      <div class="list-group-item py-2">
+        <div class="small text-muted mb-1">
+          {{ m.stage }}{% if m.match_date %} &mdash; {{ m.match_date.strftime('%d %b') }}{% endif %}
+        </div>
+        <div class="d-flex align-items-center justify-content-between">
+          <span>{{ m.home_team.name }}</span>
+          <span class="text-muted small">vs</span>
+          <span>{{ m.away_team.name }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not recent_matches and not upcoming %}
+    <div class="alert alert-info mt-2">
+      No matches yet. <a href="{{ url_for('results') }}">Add results →</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

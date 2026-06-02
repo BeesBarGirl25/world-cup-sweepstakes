@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard – WC 2026{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0 me-auto"><i class="bi bi-bar-chart-line me-2"></i>Sweepstakes Leaderboard</h1>
+</div>
+
+<div class="mb-3 small text-muted">
+  <strong>Scoring:</strong>
+  Group stage win = 1pt &bull; Round of 32 exit = 2pts &bull; Round of 16 = 4pts &bull; QF = 7pts &bull; SF = 11pts &bull; Runner-up = 15pts &bull; Champion = 20pts
+</div>
+
+{% if not draw_done %}
+<div class="alert alert-warning">
+  <i class="bi bi-info-circle me-1"></i>
+  The draw hasn't been run yet. <a href="{{ url_for('draw') }}">Go to the Draw page →</a>
+</div>
+{% elif standings %}
+
+<div class="row g-3 mb-4">
+  {% for p in standings[:3] %}
+  {% set medals = ['gold', 'silver', '#cd7f32'] %}
+  {% set icons = ['🥇', '🥈', '🥉'] %}
+  <div class="col-md-4">
+    <div class="card border-0 shadow h-100 {% if loop.index == 1 %}border-warning border-2{% endif %}">
+      <div class="card-body text-center">
+        <div class="display-4 mb-1">{{ icons[loop.index0] }}</div>
+        <h5 class="card-title mb-1">{{ p.name }}</h5>
+        <div class="display-6 fw-bold text-success">{{ p.total_points }}</div>
+        <div class="small text-muted">points</div>
+        <div class="mt-2">
+          {% for t in p.teams %}
+          <span class="badge {% if t.eliminated %}bg-secondary{% else %}bg-success{% endif %} me-1">{{ t.code }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<table class="table table-hover align-middle shadow-sm bg-white">
+  <thead class="table-dark">
+    <tr>
+      <th width="50">Rank</th>
+      <th>Participant</th>
+      <th>Teams</th>
+      <th>Points</th>
+      <th>Teams alive</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in standings %}
+    <tr {% if loop.index <= 3 %}class="table-light fw-semibold"{% endif %}>
+      <td class="text-center">
+        {% if loop.index == 1 %}🥇
+        {% elif loop.index == 2 %}🥈
+        {% elif loop.index == 3 %}🥉
+        {% else %}{{ loop.index }}{% endif %}
+      </td>
+      <td>{{ p.name }}</td>
+      <td>
+        {% for t in p.teams | sort(attribute='eliminated') %}
+        <span class="badge {% if t.eliminated %}bg-secondary{% else %}bg-success{% endif %} me-1" title="{{ t.name }}">
+          {{ t.code }}
+        </span>
+        {% endfor %}
+      </td>
+      <td class="fw-bold text-success fs-5">{{ p.total_points }}</td>
+      <td>{{ p.teams | selectattr('eliminated', 'equalto', false) | list | length }}/{{ p.teams | length }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% else %}
+<div class="alert alert-info">No participants yet. <a href="{{ url_for('participants') }}">Add some →</a></div>
+{% endif %}
+{% endblock %}
