@@ -160,4 +160,25 @@ FUN_CATEGORIES = [
         "calc_key": None,
         "sort_order": 8,
     },
+    {
+        "name": "First Blood",
+        "emoji": "⚡",
+        "description": "The team that scores the very first goal of WC 2026. Pure luck — anyone's game. The clock starts at kick-off on 11 June.",
+        "calc_key": "first_blood",
+        "sort_order": 9,
+    },
+    {
+        "name": "Comeback Kings",
+        "emoji": "🔄",
+        "description": "The team that wins the most matches after being behind at half-time. Classic underdog spirit — never say die.",
+        "calc_key": "comeback_kings",
+        "sort_order": 10,
+    },
+    {
+        "name": "Fair Play",
+        "emoji": "🕊️",
+        "description": "The team with the fewest disciplinary points across the whole tournament (yellow=1, red=3). Rewards discipline over dirty play. Tiebreaker: fewest reds.",
+        "calc_key": "fairest",
+        "sort_order": 11,
+    },
 ]

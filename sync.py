@@ -135,6 +135,11 @@ def sync_fixtures(app):
 
             venue = (f["fixture"].get("venue") or {}).get("name")
 
+            # Half-time scores (for Comeback Kings)
+            ht = f.get("score", {}).get("halftime", {})
+            home_ht = ht.get("home")
+            away_ht = ht.get("away")
+
             # Find existing match by fixture ID first, then by teams+stage
             existing = Match.query.filter_by(api_fixture_id=fix_id).first()
             if not existing:
@@ -147,8 +152,7 @@ def sync_fixtures(app):
             if existing:
                 changed = False
                 if existing.api_fixture_id != fix_id:
-                    existing.api_fixture_id = fix_id
-                    changed = True
+                    existing.api_fixture_id = fix_id; changed = True
                 if home_score is not None and existing.home_score != home_score:
                     existing.home_score = home_score
                     existing.away_score = away_score
@@ -160,12 +164,14 @@ def sync_fixtures(app):
                         home_team.id if (home_pens or 0) > (away_pens or 0) else away_team.id
                     )
                     changed = True
+                if home_ht is not None and existing.home_ht_score != home_ht:
+                    existing.home_ht_score = home_ht
+                    existing.away_ht_score = away_ht
+                    changed = True
                 if match_date and existing.match_date != match_date:
-                    existing.match_date = match_date
-                    changed = True
+                    existing.match_date = match_date; changed = True
                 if venue and existing.venue != venue:
-                    existing.venue = venue
-                    changed = True
+                    existing.venue = venue; changed = True
                 if changed:
                     updated += 1
                 if is_done and not existing.cards_synced:
@@ -179,8 +185,10 @@ def sync_fixtures(app):
                     venue=venue,
                     home_score=home_score,
                     away_score=away_score,
-                    home_penalties=home_pens if home_pens is not None else None,
-                    away_penalties=away_pens if away_pens is not None else None,
+                    home_penalties=home_pens,
+                    away_penalties=away_pens,
+                    home_ht_score=home_ht,
+                    away_ht_score=away_ht,
                     api_fixture_id=fix_id,
                 )
                 if home_pens is not None and away_pens is not None:
@@ -194,50 +202,71 @@ def sync_fixtures(app):
 
         db.session.commit()
 
-        # ── 2. Fetch card stats for newly completed matches ───────────────────
-        # Cap at 15 per sync to stay comfortably within 100 req/day
+        # ── 2. Fetch events (cards + goals) for newly completed matches ─────────
+        # One call per match gives us cards AND first-goal data.
+        # Cap at 15 per sync; each match is only fetched once (cards_synced flag).
         card_updates = 0
         for fix_id in needs_cards[:15]:
             try:
-                sr = requests.get(
-                    f"{API_BASE}/fixtures/statistics",
+                er = requests.get(
+                    f"{API_BASE}/fixtures/events",
                     params={"fixture": fix_id},
                     headers=headers,
                     timeout=10,
                 )
-                _check_rate(sr)
-                sr.raise_for_status()
+                _check_rate(er)
+                er.raise_for_status()
 
                 match = Match.query.filter_by(api_fixture_id=fix_id).first()
                 if not match:
                     continue
 
-                for team_stats in sr.json().get("response", []):
-                    tname = team_stats["team"].get("name", "")
+                home_y = home_r = away_y = away_r = 0
+                first_goal_team_id = None
+                first_goal_min = 9999
+
+                for evt in er.json().get("response", []):
+                    tname = (evt.get("team") or {}).get("name", "")
                     team = teams_by_name.get(_normalise(tname))
                     if not team:
                         continue
-                    yellows = reds = 0
-                    for stat in team_stats.get("statistics", []):
-                        t = stat.get("type", "")
-                        v = int(stat.get("value") or 0)
-                        if t == "Yellow Cards":
-                            yellows = v
-                        elif t == "Red Cards":
-                            reds = v
-                    if team.id == match.home_team_id:
-                        match.home_yellows = yellows
-                        match.home_reds = reds
-                    elif team.id == match.away_team_id:
-                        match.away_yellows = yellows
-                        match.away_reds = reds
 
+                    etype  = evt.get("type", "")
+                    detail = evt.get("detail", "")
+                    minute = (evt.get("time") or {}).get("elapsed", 9999)
+                    is_home = team.id == match.home_team_id
+
+                    if etype == "Card":
+                        if detail == "Yellow Card":
+                            if is_home: home_y += 1
+                            else:       away_y += 1
+                        elif detail in ("Red Card", "Second Yellow card"):
+                            if is_home: home_r += 1
+                            else:       away_r += 1
+
+                    elif etype == "Goal" and detail not in ("Missed Penalty",):
+                        if minute < first_goal_min:
+                            first_goal_min = minute
+                            if detail == "Own Goal":
+                                # credit goes to the OTHER team
+                                first_goal_team_id = (
+                                    match.away_team_id if is_home else match.home_team_id
+                                )
+                            else:
+                                first_goal_team_id = team.id
+
+                match.home_yellows = home_y
+                match.away_yellows = away_y
+                match.home_reds    = home_r
+                match.away_reds    = away_r
+                if first_goal_team_id:
+                    match.first_goal_team_id = first_goal_team_id
                 match.cards_synced = True
                 card_updates += 1
                 time.sleep(0.3)
 
             except Exception as exc:
-                print(f"Card stats error for fixture {fix_id}: {exc}")
+                print(f"Events error for fixture {fix_id}: {exc}")
 
         db.session.commit()
 

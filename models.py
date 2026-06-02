@@ -166,6 +166,9 @@ class Match(db.Model):
     away_yellows = db.Column(db.Integer, nullable=True)
     home_reds = db.Column(db.Integer, nullable=True)
     away_reds = db.Column(db.Integer, nullable=True)
+    home_ht_score = db.Column(db.Integer, nullable=True)
+    away_ht_score = db.Column(db.Integer, nullable=True)
+    first_goal_team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=True)
     api_fixture_id = db.Column(db.Integer, nullable=True, unique=True)
     cards_synced = db.Column(db.Boolean, default=False)
 

@@ -82,12 +82,63 @@ def _calc_penalty_kings():
     return [t for (w, t) in teams if w == max_wins]
 
 
+def _calc_first_blood():
+    """Team that scores the very first goal of the entire tournament."""
+    first = (
+        Match.query
+        .filter(Match.first_goal_team_id.isnot(None))
+        .order_by(Match.match_date)
+        .first()
+    )
+    if not first:
+        return []
+    team = Team.query.get(first.first_goal_team_id)
+    return [team] if team else []
+
+
+def _calc_comeback_kings():
+    """Most wins from a losing HT position across the tournament."""
+    counts = {}
+    for m in Match.query.filter(
+        Match.home_ht_score.isnot(None),
+        Match.home_score.isnot(None),
+    ).all():
+        # Home team comeback
+        if m.home_ht_score < m.away_ht_score and m.home_score > m.away_score:
+            counts[m.home_team_id] = counts.get(m.home_team_id, 0) + 1
+        # Away team comeback
+        if m.away_ht_score < m.home_ht_score and m.away_score > m.home_score:
+            counts[m.away_team_id] = counts.get(m.away_team_id, 0) + 1
+    if not counts:
+        return []
+    best = max(counts.values())
+    return Team.query.filter(Team.id.in_(
+        [tid for tid, c in counts.items() if c == best]
+    )).all()
+
+
+def _calc_fairest():
+    """Team with the fewest card points (opposite of Dirtiest). Tiebreak: fewer yellows."""
+    teams = [t for t in Team.query.all() if any(m.cards_synced for m in t.all_matches)]
+    if not teams:
+        return []
+    ranked = sorted(teams, key=lambda t: (t.total_card_points, t.total_reds))
+    if not ranked:
+        return []
+    best_pts = ranked[0].total_card_points
+    best_reds = ranked[0].total_reds
+    return [t for t in ranked if t.total_card_points == best_pts and t.total_reds == best_reds]
+
+
 FUN_CALCS = {
     "wooden_spoon":  _calc_wooden_spoon,
     "biggest_loser": _calc_biggest_loser,
     "dirtiest":      _calc_dirtiest,
     "best_defense":  _calc_best_defense,
     "penalty_kings": _calc_penalty_kings,
+    "first_blood":   _calc_first_blood,
+    "comeback_kings":_calc_comeback_kings,
+    "fairest":       _calc_fairest,
 }
 
 
@@ -548,9 +599,13 @@ def init_db():
         for p in PARTICIPANTS:
             db.session.add(Participant(**p))
         db.session.commit()
-    if FunCategory.query.count() == 0:
-        for f in FUN_CATEGORIES:
+    existing_names = {c.name for c in FunCategory.query.all()}
+    added = False
+    for f in FUN_CATEGORIES:
+        if f["name"] not in existing_names:
             db.session.add(FunCategory(**f))
+            added = True
+    if added:
         db.session.commit()
 
 
