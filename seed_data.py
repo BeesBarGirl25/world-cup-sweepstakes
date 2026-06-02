@@ -65,3 +65,40 @@ TEAMS = [
     {"name": "Cameroon", "code": "CMR", "group_name": "L", "confederation": "CAF"},
     {"name": "New Zealand", "code": "NZL", "group_name": "L", "confederation": "OFC"},
 ]
+
+# Quantexa sweepstake participants — processed from contributions CSV
+# entry_fee_paid = rounded total; entries = fee / 5
+PARTICIPANTS = [
+    {"name": "Alex Wood",          "entry_fee_paid": 25.00},  # 5 entries
+    {"name": "Molly Atkinson",     "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Harry Reid",         "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Tristan Rowick",     "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Mahamed Ali",        "entry_fee_paid": 15.00},  # 3 entries
+    {"name": "John Keightley",     "entry_fee_paid": 15.00},  # 3 entries
+    {"name": "Gregory Jones",      "entry_fee_paid": 15.00},  # 3 entries
+    {"name": "Alex Cowan",         "entry_fee_paid": 15.00},  # 3 entries
+    {"name": "Martin Durchov",     "entry_fee_paid": 10.00},  # 2 entries (rounded from £10.39)
+    {"name": "Paris Dean-Vigrass", "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Shyam Bhatt",        "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Ed Hodgskiss",       "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Charlotte Taylor",   "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Will Fox",           "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Mike McDaid",        "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Alex Johnson",       "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Alex Arotsker",      "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Martyn Laidler",     "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Ian Clarke",         "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Manny Lawal",        "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Andrew Jensen",      "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Mark Cossey",        "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Sam Hall",           "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Iain Cooper",        "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Marlon Joseph",      "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Harry Bruce",        "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Alasdair Cross",     "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Will Rice",          "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "David Walsh",        "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Tom Sheehy",         "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "James Bruce",        "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Ben Willis",         "entry_fee_paid":  5.00},  # 1 entry
+]

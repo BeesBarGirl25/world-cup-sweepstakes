@@ -2,7 +2,7 @@ import os
 import random
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from models import db, Team, Participant, Assignment, Match, Prize
-from seed_data import TEAMS
+from seed_data import TEAMS, PARTICIPANTS
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
@@ -130,10 +130,22 @@ def run_draw():
         flash("Add participants before running the draw.", "danger")
         return redirect(url_for("draw"))
 
+    # Build a weighted pool: each participant appears once per £5 entry
+    pool = []
+    for p in participants:
+        entries = max(1, round(p.entry_fee_paid / 5))
+        pool.extend([p] * entries)
+    random.shuffle(pool)
     random.shuffle(teams)
-    for i, team in enumerate(teams):
-        participant = participants[i % len(participants)]
-        db.session.add(Assignment(participant_id=participant.id, team_id=team.id))
+    # Assign every pool slot a team (cycling through teams so all entries get one)
+    # Teams get multiple owners when entries > teams — that's intentional
+    assigned_pairs = set()
+    for i, participant in enumerate(pool):
+        team = teams[i % len(teams)]
+        pair = (participant.id, team.id)
+        if pair not in assigned_pairs:
+            assigned_pairs.add(pair)
+            db.session.add(Assignment(participant_id=participant.id, team_id=team.id))
 
     db.session.commit()
     flash("Draw complete! Teams have been assigned.", "success")
@@ -314,6 +326,11 @@ def init_db():
             db.session.add(Team(**t))
         db.session.commit()
         print(f"Seeded {len(TEAMS)} teams.")
+    if Participant.query.count() == 0:
+        for p in PARTICIPANTS:
+            db.session.add(Participant(**p))
+        db.session.commit()
+        print(f"Seeded {len(PARTICIPANTS)} participants.")
 
 
 with app.app_context():

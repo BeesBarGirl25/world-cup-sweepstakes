@@ -63,16 +63,24 @@
           </div>
           <ul class="list-group list-group-flush">
             {% for team in teams %}
-            <li class="list-group-item d-flex align-items-center justify-content-between
-                        {% if team.eliminated %}text-muted{% endif %}">
-              <span>
-                <span class="badge bg-secondary me-1 font-monospace">{{ team.code }}</span>
-                {{ team.name }}
-                {% if team.eliminated %}
-                  <span class="badge bg-danger ms-1 small">out</span>
-                {% endif %}
-              </span>
-              <span class="badge bg-light text-dark border">{{ team.points }}pts</span>
+            <li class="list-group-item {% if team.eliminated %}text-muted{% endif %}">
+              <div class="d-flex align-items-center justify-content-between">
+                <span>
+                  <span class="badge bg-secondary me-1 font-monospace">{{ team.code }}</span>
+                  {{ team.name }}
+                  {% if team.eliminated %}
+                    <span class="badge bg-danger ms-1 small">out</span>
+                  {% endif %}
+                </span>
+                <span class="badge bg-light text-dark border">{{ team.points }}pts</span>
+              </div>
+              {% if team.assignments %}
+              <div class="mt-1 small text-muted">
+                {% for a in team.assignments %}
+                  <span class="badge bg-info text-dark me-1">{{ a.participant.name.split()[0] }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
             </li>
             {% endfor %}
           </ul>
