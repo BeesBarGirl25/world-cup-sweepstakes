@@ -80,8 +80,14 @@ def sync_fixtures(app):
         for am in api_matches:
             stage = STAGE_MAP.get(am.get("stage", ""), "Group Stage")
 
-            home_key = _normalise(am["homeTeam"]["name"])
-            away_key = _normalise(am["awayTeam"]["name"])
+            home_name = am["homeTeam"].get("name")
+            away_name = am["awayTeam"].get("name")
+            if not home_name or not away_name:
+                skipped += 1
+                continue
+
+            home_key = _normalise(home_name)
+            away_key = _normalise(away_name)
             home_team = teams_by_name.get(home_key)
             away_team = teams_by_name.get(away_key)
 
