@@ -81,6 +81,11 @@ class Team(db.Model):
         return pts
 
     @property
+    def draws(self):
+        return sum(1 for m in self.all_matches
+                   if m.played and m.home_score == m.away_score)
+
+    @property
     def total_goals_for(self):
         total = 0
         for m in self.all_matches:

@@ -35,6 +35,36 @@
   </div>
 </div>
 
+{% if progression %}
+{% set ICONS = {'advanced':'bi-check-circle-fill','champion':'bi-trophy-fill','eliminated':'bi-x-circle-fill','current':'bi-broadcast','next':'bi-clock','future':'bi-question-circle','upcoming':'bi-clock','locked':'bi-lock-fill'} %}
+{% set LABELS = {'future':'TBD','locked':'—','upcoming':'Upcoming','next':'Next up','current':'Live now'} %}
+<div class="section-title"><i class="bi bi-signpost-split me-1"></i>Path to the Final</div>
+<div class="progression mb-4">
+  {% for step in progression %}
+  <div class="prog-step prog-{{ step.status }}">
+    <div class="prog-stage">{{ step.stage }}</div>
+    <div class="prog-icon"><i class="bi {{ ICONS.get(step.status, 'bi-circle') }}"></i></div>
+    {% if step.opponent %}
+      <div class="prog-opp">
+        {% if step.opponent.placeholder %}<span style="color:var(--text-dim)">{{ step.opponent.name }}</span>
+        {% else %}
+          {% if step.opponent.logo %}<img src="{{ step.opponent.logo }}" alt="" width="15" height="15" style="object-fit:contain;vertical-align:-2px">
+          {% else %}{{ FLAG_EMOJIS.get(step.opponent.abbrev,'') }}{% endif %}
+          {{ step.opponent.name }}
+        {% endif %}
+      </div>
+      <div class="prog-score">{{ step.score or step.date or '' }}</div>
+    {% elif step.detail %}
+      <div class="prog-opp">{{ step.detail }}</div>
+    {% else %}
+      <div class="prog-opp" style="color:var(--text-dim)">{{ LABELS.get(step.status, '') }}</div>
+    {% endif %}
+  </div>
+  {% if not loop.last %}<div class="prog-arrow"><i class="bi bi-chevron-right"></i></div>{% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="row g-4">
   <!-- Fixtures & results -->
   <div class="col-lg-7">
@@ -109,4 +139,21 @@
     {% endfor %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .progression { display:flex; align-items:stretch; gap:.4rem; overflow-x:auto; padding-bottom:.5rem; -webkit-overflow-scrolling:touch; }
+  .prog-step { min-width:128px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:.6rem .7rem; text-align:center; flex-shrink:0; }
+  .prog-stage { font-size:.58rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); margin-bottom:.25rem; }
+  .prog-icon { font-size:1.1rem; line-height:1; margin-bottom:.25rem; }
+  .prog-opp { font-size:.76rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .prog-score { font-size:.7rem; color:var(--text-muted); }
+  .prog-arrow { display:flex; align-items:center; color:var(--text-dim); }
+  .prog-advanced { border-color:rgba(0,214,143,.4); } .prog-advanced .prog-icon { color:var(--green); }
+  .prog-champion { border-color:rgba(240,165,0,.5); background:var(--gold-dim); } .prog-champion .prog-icon { color:var(--gold); }
+  .prog-eliminated { border-color:rgba(255,77,109,.4); } .prog-eliminated .prog-icon { color:var(--red); }
+  .prog-current, .prog-next { border-color:rgba(240,165,0,.4); } .prog-current .prog-icon, .prog-next .prog-icon { color:var(--gold); }
+  .prog-future, .prog-locked, .prog-upcoming { opacity:.5; }
+</style>
 {% endblock %}

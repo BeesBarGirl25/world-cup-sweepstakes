@@ -103,18 +103,44 @@ def _calc_penalty_kings():
     return [t for (w, t) in teams if w == max_wins]
 
 
-def _calc_first_blood():
-    """Team that scores the very first goal of the entire tournament."""
-    first = (
-        Match.query
-        .filter(Match.first_goal_team_id.isnot(None))
-        .order_by(Match.match_date)
-        .first()
-    )
-    if not first:
+def _calc_plucky_underdog():
+    """Best team to be eliminated in the group stage — most group points,
+    tiebreak group goal difference then goals scored."""
+    teams = [t for t in Team.query.all() if t.eliminated_stage == "Group Stage"]
+    if not teams:
         return []
-    team = Team.query.get(first.first_goal_team_id)
-    return [team] if team else []
+    teams.sort(key=lambda t: (-t.group_points,
+                              -(t.group_goals_for - t.group_goals_against),
+                              -t.group_goals_for))
+    best = teams[0]
+    bgd = best.group_goals_for - best.group_goals_against
+    return [t for t in teams
+            if t.group_points == best.group_points
+            and (t.group_goals_for - t.group_goals_against) == bgd
+            and t.group_goals_for == best.group_goals_for]
+
+
+def _calc_draw_specialists():
+    """Team with the most drawn matches across the tournament."""
+    counts = [(t.draws, t) for t in Team.query.all() if t.draws > 0]
+    if not counts:
+        return []
+    counts.sort(key=lambda x: -x[0])
+    top = counts[0][0]
+    return [t for (d, t) in counts if d == top]
+
+
+def _calc_sieve():
+    """Team that concedes the most goals overall. Tiebreak: fewest scored."""
+    teams = [t for t in Team.query.all()
+             if any(m.played for m in t.all_matches) and t.total_goals_conceded > 0]
+    if not teams:
+        return []
+    teams.sort(key=lambda t: (-t.total_goals_conceded, t.total_goals_for))
+    top_c = teams[0].total_goals_conceded
+    top_f = teams[0].total_goals_for
+    return [t for t in teams
+            if t.total_goals_conceded == top_c and t.total_goals_for == top_f]
 
 
 def _calc_comeback_kings():
@@ -158,7 +184,9 @@ FUN_CALCS = {
     "best_defense":  _calc_best_defense,
     "golden_boot":   _calc_golden_boot,
     "penalty_kings": _calc_penalty_kings,
-    "first_blood":   _calc_first_blood,
+    "plucky_underdog": _calc_plucky_underdog,
+    "draw_specialists": _calc_draw_specialists,
+    "sieve":         _calc_sieve,
     "comeback_kings":_calc_comeback_kings,
     "fairest":       _calc_fairest,
 }
@@ -525,6 +553,8 @@ RANKED_METRICS = {
     "dirtiest":      ("Card points",    "total_card_points",     True),
     "fairest":       ("Card points",    "total_card_points",     False),
     "penalty_kings": ("Shootout wins",  "penalty_wins",          True),
+    "sieve":         ("Goals conceded", "total_goals_conceded",  True),
+    "draw_specialists": ("Draws",       "draws",                 True),
 }
 
 
@@ -555,14 +585,92 @@ def get_team_fun_standings(team):
     return out
 
 
+KO_PROGRESSION = ["Round of 32", "Round of 16", "Quarter-final", "Semi-final", "Final"]
+
+
+def get_team_progression(team, fixtures):
+    """A step-by-step path of the team's run to the Final, from ESPN fixtures."""
+    code = team.code
+
+    def side(f):
+        if not f["home"]["placeholder"] and f["home"]["abbrev"] == code:
+            return "home"
+        if not f["away"]["placeholder"] and f["away"]["abbrev"] == code:
+            return "away"
+        return None
+
+    by_stage = {}
+    for f in fixtures:
+        if side(f):
+            by_stage.setdefault(f["stage"], []).append(f)
+
+    steps = []
+    # ── Group stage ──
+    grp = by_stage.get("Group Stage", [])
+    grp_played = [f for f in grp if f["state"] == "post"]
+    reached_ko = any(s in by_stage for s in KO_PROGRESSION)
+    if team.eliminated_stage == "Group Stage":
+        gstatus = "eliminated"
+    elif reached_ko or team.eliminated_stage in (["Champion"] + KO_PROGRESSION + ["Runner-up"]):
+        gstatus = "advanced"
+    elif grp and len(grp_played) < len(grp):
+        gstatus = "current"
+    elif grp_played:
+        gstatus = "advanced"
+    else:
+        gstatus = "upcoming"
+    steps.append({
+        "stage": "Group Stage", "status": gstatus,
+        "detail": (f"Group {team.group_name} · {team.group_points} pts"
+                   if grp_played else f"Group {team.group_name}"),
+        "opponent": None, "score": None, "date": None,
+    })
+
+    elim_idx = (KO_PROGRESSION.index(team.eliminated_stage)
+                if team.eliminated_stage in KO_PROGRESSION else None)
+    for i, st in enumerate(KO_PROGRESSION):
+        fs = by_stage.get(st)
+        if not fs:
+            locked = gstatus == "eliminated" or (elim_idx is not None and elim_idx < i)
+            steps.append({"stage": st, "status": "locked" if locked else "future",
+                          "opponent": None, "score": None, "date": None, "detail": None})
+            continue
+        f = fs[0]
+        s = side(f)
+        opp = f["away"] if s == "home" else f["home"]
+        my = f[s]
+        score = date = None
+        if f["state"] == "post":
+            if my["shootout"] is not None and opp["shootout"] is not None:
+                won = my["shootout"] > opp["shootout"]
+            else:
+                won = (my["score"] or 0) > (opp["score"] or 0)
+            status = ("champion" if (st == "Final" and won) else
+                      "advanced" if won else "eliminated")
+            score = f"{my['score']}–{opp['score']}"
+            if my["shootout"] is not None:
+                score += f" (p{my['shootout']}–{opp['shootout']})"
+        elif f["state"] == "in":
+            status, score = "current", "LIVE"
+        else:
+            status = "next"
+        if f["date"]:
+            date = f["date"].strftime("%d %b")
+        steps.append({"stage": st, "status": status, "opponent": opp,
+                      "score": score, "date": date, "detail": None})
+    return steps
+
+
 @app.route("/team/<code>")
 def team_profile(code):
+    from espn import fetch_fixtures
     team = Team.query.filter_by(code=code).first_or_404()
     group_tables = get_group_tables()
     matches = sorted(team.all_matches,
                      key=lambda m: (m.match_date or datetime.max, m.id))
     fun_standings = get_team_fun_standings(team)
     owners = [a.participant for a in team.assignments]
+    progression = get_team_progression(team, fetch_fixtures())
     return render_template(
         "country.html",
         team=team,
@@ -570,6 +678,7 @@ def team_profile(code):
         matches=matches,
         fun_standings=fun_standings,
         owners=owners,
+        progression=progression,
     )
 
 
@@ -749,10 +858,12 @@ def init_db():
             added = True
     if added:
         db.session.commit()
-    # Remove subjective categories — we only run objective, auto-calculated ones
-    subjective = FunCategory.query.filter(FunCategory.calc_key.is_(None)).all()
-    if subjective:
-        for cat in subjective:
+    # Remove categories we no longer run: subjective (no calc_key) or orphaned
+    # ones whose calculator has been retired (e.g. First Blood).
+    stale = [c for c in FunCategory.query.all()
+             if not c.calc_key or c.calc_key not in FUN_CALCS]
+    if stale:
+        for cat in stale:
             FunWinner.query.filter_by(category_id=cat.id).delete()
             db.session.delete(cat)
         db.session.commit()

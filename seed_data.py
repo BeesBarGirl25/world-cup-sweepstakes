@@ -480,10 +480,24 @@ FUN_CATEGORIES = [
         "sort_order": 6,
     },
     {
-        "name": "First Blood",
-        "emoji": "⚡",
-        "description": "The team that scores the very first goal of WC 2026. Pure luck — anyone's game. The clock starts at kick-off on 11 June.",
-        "calc_key": "first_blood",
+        "name": "Plucky Underdog",
+        "emoji": "🐣",
+        "description": "The best team to be knocked out in the group stage — most group points (tiebreak goal difference) among those who go home early. For the minnow that overachieved.",
+        "calc_key": "plucky_underdog",
+        "sort_order": 7,
+    },
+    {
+        "name": "Draw Specialists",
+        "emoji": "🤝",
+        "description": "The team with the most drawn matches across the tournament. Masters of the hard-earned point — never beaten, never quite winning.",
+        "calc_key": "draw_specialists",
+        "sort_order": 8,
+    },
+    {
+        "name": "The Sieve",
+        "emoji": "🧺",
+        "description": "The team that concedes the most goals across the whole tournament (tiebreak: fewest scored). The leakiest defence of them all.",
+        "calc_key": "sieve",
         "sort_order": 9,
     },
     {
