@@ -81,6 +81,14 @@ class Team(db.Model):
         return pts
 
     @property
+    def total_goals_for(self):
+        total = 0
+        for m in self.all_matches:
+            if m.played:
+                total += m.home_score if m.home_team_id == self.id else m.away_score
+        return total
+
+    @property
     def total_goals_conceded(self):
         total = 0
         for m in self.all_matches:

@@ -81,6 +81,19 @@ def _calc_best_defense():
     return [t for (c, t) in played if c == min_conceded]
 
 
+def _calc_golden_boot():
+    """Team that has scored the most goals across the tournament.
+    Tiebreak: fewest conceded."""
+    teams = [t for t in Team.query.all() if t.total_goals_for > 0]
+    if not teams:
+        return []
+    teams.sort(key=lambda t: (-t.total_goals_for, t.total_goals_conceded))
+    top_gf = teams[0].total_goals_for
+    top_ga = teams[0].total_goals_conceded
+    return [t for t in teams
+            if t.total_goals_for == top_gf and t.total_goals_conceded == top_ga]
+
+
 def _calc_penalty_kings():
     teams = [(t.penalty_wins, t) for t in Team.query.all() if t.penalty_wins > 0]
     if not teams:
@@ -143,6 +156,7 @@ FUN_CALCS = {
     "biggest_loser": _calc_biggest_loser,
     "dirtiest":      _calc_dirtiest,
     "best_defense":  _calc_best_defense,
+    "golden_boot":   _calc_golden_boot,
     "penalty_kings": _calc_penalty_kings,
     "first_blood":   _calc_first_blood,
     "comeback_kings":_calc_comeback_kings,
@@ -288,22 +302,48 @@ def participants():
 
 # ── Tournament standings ──────────────────────────────────────────────────────
 
+@app.route("/tournament")
+def tournament():
+    from espn import fetch_fixtures, fixtures_by_date, bracket_tree
+    group_tables = get_group_tables()
+
+    all_fixtures = fetch_fixtures()
+    fx_days = fixtures_by_date(all_fixtures)
+    bracket_cols, third_place = bracket_tree(all_fixtures)
+    seen, fx_stages = set(), []
+    for f in all_fixtures:
+        if f["stage"] not in seen:
+            seen.add(f["stage"]); fx_stages.append(f["stage"])
+
+    results_matches = (
+        Match.query.filter(Match.home_score.isnot(None))
+        .order_by(Match.match_date, Match.id).all()
+    )
+    played_stages = {m.stage for m in results_matches}
+    stage_order = ["Group Stage", "Round of 32", "Round of 16", "Quarter-final",
+                   "Semi-final", "Third-place Play-off", "Final"]
+    res_stages = [s for s in stage_order if s in played_stages]
+
+    active = request.args.get("tab", "standings")
+    if active not in ("standings", "bracket", "fixtures", "results"):
+        active = "standings"
+    return render_template(
+        "tournament.html",
+        group_tables=group_tables,
+        fx_days=fx_days,
+        fx_stages=fx_stages,
+        bracket_cols=bracket_cols,
+        third_place=third_place,
+        results_matches=results_matches,
+        res_stages=res_stages,
+        active_tab=active,
+        is_admin=is_admin(),
+    )
+
+
 @app.route("/standings")
 def standings():
-    group_tables = get_group_tables()
-    knockout_matches = Match.query.filter(
-        Match.stage != "Group Stage"
-    ).order_by(Match.stage, Match.match_date).all()
-    stages_order = ["Round of 32", "Round of 16", "Quarter-final", "Semi-final", "Runner-up", "Final"]
-    knockout_by_stage = {}
-    for m in knockout_matches:
-        knockout_by_stage.setdefault(m.stage, []).append(m)
-    return render_template(
-        "standings.html",
-        group_tables=group_tables,
-        knockout_by_stage=knockout_by_stage,
-        stages_order=stages_order,
-    )
+    return redirect(url_for("tournament", tab="standings"))
 
 
 # ── Fun categories ────────────────────────────────────────────────────────────
@@ -367,6 +407,9 @@ def clear_fun_winner(cid):
 
 @app.route("/draw")
 def draw():
+    if not is_admin():
+        flash("The draw is admin-only.", "warning")
+        return redirect(url_for("admin_login", next=url_for("draw")))
     participants_list = Participant.query.order_by(Participant.name).all()
     draw_done = Assignment.query.count() > 0
     draw_pub = is_draw_public()
@@ -446,14 +489,7 @@ def reset_draw():
 
 @app.route("/results")
 def results():
-    stage_filter = request.args.get("stage", "")
-    query = Match.query
-    if stage_filter:
-        query = query.filter_by(stage=stage_filter)
-    matches = query.order_by(Match.match_date, Match.id).all()
-    stages = [r[0] for r in db.session.query(Match.stage).distinct().all()]
-    return render_template("results.html", matches=matches, stages=stages,
-                           stage_filter=stage_filter, is_admin=is_admin())
+    return redirect(url_for("tournament", tab="results"))
 
 
 @app.route("/results/<int:mid>/delete", methods=["POST"])
@@ -471,34 +507,70 @@ def delete_match(mid):
 
 @app.route("/fixtures")
 def fixtures():
-    from espn import fetch_fixtures, fixtures_by_date, STAGE_SLUG_MAP
-    all_fixtures = fetch_fixtures()
-    stage_filter = request.args.get("stage", "")
-    if stage_filter:
-        shown = [f for f in all_fixtures if f["stage"] == stage_filter]
-    else:
-        shown = all_fixtures
-    # Preserve tournament order of stages for the filter chips.
-    seen, stages = set(), []
-    for f in all_fixtures:
-        if f["stage"] not in seen:
-            seen.add(f["stage"]); stages.append(f["stage"])
-    return render_template(
-        "fixtures.html",
-        days=fixtures_by_date(shown),
-        stages=stages,
-        stage_filter=stage_filter,
-        total=len(all_fixtures),
-    )
+    return redirect(url_for("tournament", tab="fixtures"))
 
-
-# ── Bracket (live from ESPN) ──────────────────────────────────────────────────
 
 @app.route("/bracket")
 def bracket():
-    from espn import fetch_fixtures, bracket_tree
-    columns, third_place = bracket_tree(fetch_fixtures())
-    return render_template("bracket.html", columns=columns, third_place=third_place)
+    return redirect(url_for("tournament", tab="bracket"))
+
+
+# ── Country profile ───────────────────────────────────────────────────────────
+
+# Fun categories that rank cleanly on a single numeric metric.
+# key → (label, attribute, higher_is_better)
+RANKED_METRICS = {
+    "golden_boot":   ("Goals scored",   "total_goals_for",       True),
+    "best_defense":  ("Goals conceded", "total_goals_conceded",  False),
+    "dirtiest":      ("Card points",    "total_card_points",     True),
+    "fairest":       ("Card points",    "total_card_points",     False),
+    "penalty_kings": ("Shootout wins",  "penalty_wins",          True),
+}
+
+
+def get_team_fun_standings(team):
+    """For each fun category, where this team ranks (or whether it leads)."""
+    out = []
+    played_teams = [t for t in Team.query.all() if any(m.played for m in t.all_matches)]
+    for cat in FunCategory.query.order_by(FunCategory.sort_order).all():
+        leaders, _ = get_fun_leaders(cat)
+        is_leader = any(t.id == team.id for t in leaders)
+        rank = total = value = None
+        if cat.calc_key in RANKED_METRICS:
+            label, attr, higher = RANKED_METRICS[cat.calc_key]
+            team_val = getattr(team, attr)
+            value = f"{team_val} {label.lower()}"
+            # For "more is better" stats, a 0 isn't a meaningful ranking.
+            if not (higher and not team_val):
+                ranked = [t for t in played_teams if getattr(t, attr) is not None]
+                ranked.sort(key=lambda t: getattr(t, attr), reverse=higher)
+                total = len(ranked)
+                for i, t in enumerate(ranked, 1):
+                    if t.id == team.id:
+                        rank = i
+                        break
+        out.append({"cat": cat, "is_leader": is_leader,
+                    "rank": rank, "total": total, "value": value,
+                    "leaders": leaders})
+    return out
+
+
+@app.route("/team/<code>")
+def team_profile(code):
+    team = Team.query.filter_by(code=code).first_or_404()
+    group_tables = get_group_tables()
+    matches = sorted(team.all_matches,
+                     key=lambda m: (m.match_date or datetime.max, m.id))
+    fun_standings = get_team_fun_standings(team)
+    owners = [a.participant for a in team.assignments]
+    return render_template(
+        "country.html",
+        team=team,
+        group_table=group_tables.get(team.group_name, []),
+        matches=matches,
+        fun_standings=fun_standings,
+        owners=owners,
+    )
 
 
 # ── Leaderboard ──────────────────────────────────────────────────────────────
@@ -662,10 +734,13 @@ def init_db():
         if not team.flag_emoji:
             team.flag_emoji = FLAG_EMOJIS.get(team.code, "🏳️")
     db.session.commit()
-    if Participant.query.count() == 0:
-        for p in PARTICIPANTS:
+    # Add any participants from seed_data not already present (idempotent — lets
+    # new entrants be added on deploy without wiping existing data or the draw).
+    existing_participants = {p.name for p in Participant.query.all()}
+    for p in PARTICIPANTS:
+        if p["name"] not in existing_participants:
             db.session.add(Participant(**p))
-        db.session.commit()
+    db.session.commit()
     existing_names = {c.name for c in FunCategory.query.all()}
     added = False
     for f in FUN_CATEGORIES:

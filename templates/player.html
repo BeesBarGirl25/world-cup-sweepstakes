@@ -39,7 +39,7 @@
             <div class="d-flex align-items-center gap-2 mb-2">
               <span style="font-size:2rem">{{ team.flag_emoji or FLAG_EMOJIS.get(team.code,'🏳️') }}</span>
               <div>
-                <div style="font-weight:700">{{ team.name }}</div>
+                <div style="font-weight:700"><a href="{{ url_for('team_profile', code=team.code) }}" style="color:var(--text);text-decoration:none">{{ team.name }}</a></div>
                 <div style="font-size:.7rem">
                   <span class="conf-badge conf-{{ team.confederation }}">{{ team.confederation }}</span>
                   Grp {{ team.group_name }}

@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Tournament – WC 2026{% endblock %}
+
+{# ── shared macros ───────────────────────────────────────────────────────── #}
+{% macro fx_side(team, score, show_score, align) %}
+  <div class="col d-flex align-items-center gap-2 {% if align == 'end' %}justify-content-end text-end flex-row-reverse{% endif %}">
+    {% if team.placeholder %}
+      <span class="bkt-flag">🏳️</span><span class="fw-semibold" style="color:var(--text-muted)">{{ team.name }}</span>
+    {% else %}
+      {% if team.logo %}<img src="{{ team.logo }}" alt="" width="22" height="22" loading="lazy" style="object-fit:contain">
+      {% else %}<span class="bkt-flag">{{ FLAG_EMOJIS.get(team.abbrev, '🏳️') }}</span>{% endif %}
+      <a href="{{ url_for('team_profile', code=team.abbrev) }}" class="fw-semibold" style="color:var(--text);text-decoration:none">{{ team.name }}</a>
+    {% endif %}
+    {% if show_score %}<span class="score-display ms-2" style="font-size:1.15rem;padding:0 .55rem">{{ score if score is not none else '–' }}</span>{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro bkt_team(team, is_winner, show_score) %}
+  <div class="bracket-team {% if is_winner %}winner{% endif %}">
+    {% if team.placeholder %}
+      <span class="bkt-slot" title="{{ team.name }}">{{ team.slot or '—' }}</span>
+      <span class="bkt-name bkt-ph" title="{{ team.name }}">{{ team.name }}</span>
+    {% else %}
+      {% if team.logo %}<img class="bkt-logo" src="{{ team.logo }}" alt="" width="18" height="18" loading="lazy">
+      {% else %}<span class="bkt-flag">{{ FLAG_EMOJIS.get(team.abbrev, '🏳️') }}</span>{% endif %}
+      <span class="bkt-name">{{ team.name }}</span>
+      {% if show_score %}<span class="bkt-score">{{ team.score if team.score is not none else '' }}{% if team.shootout is not none %}<sup style="font-size:.6em">({{ team.shootout }})</sup>{% endif %}</span>{% endif %}
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro matchup(m) %}
+  {% if not m %}<div class="bracket-matchup empty"></div>
+  {% else %}
+  {% set hs, as = m.home.score, m.away.score %}
+  {% set hp, ap = m.home.shootout, m.away.shootout %}
+  {% set pens = hp is not none and ap is not none %}
+  {% set home_win = m.completed and ((pens and hp > ap) or (not pens and hs is not none and as is not none and hs > as)) %}
+  {% set away_win = m.completed and ((pens and ap > hp) or (not pens and hs is not none and as is not none and as > hs)) %}
+  {% set show_score = m.state in ('in', 'post') %}
+  <div class="bracket-matchup {% if m.completed %}played{% endif %}{% if m.state == 'in' %} live{% endif %}">
+    {{ bkt_team(m.home, home_win, show_score) }}
+    {{ bkt_team(m.away, away_win, show_score) }}
+    <div class="bkt-date">{% if m.state == 'in' %}<span style="color:var(--red)">● LIVE</span>{% elif m.date %}{{ m.date.strftime('%d %b') }}{% else %}TBC{% endif %}</div>
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3 gap-3 flex-wrap">
+  <h1 class="h4 mb-0"><i class="bi bi-trophy me-2" style="color:var(--gold)"></i>Tournament</h1>
+  <form method="POST" action="{{ url_for('admin_sync') }}" class="ms-auto">
+    <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Sync</button>
+  </form>
+</div>
+
+<!-- Toggle -->
+<ul class="nav nav-pills tournament-toggle mb-4 gap-2" role="tablist">
+  {% set tabs = [('standings','bi-table','Standings'),('bracket','bi-diagram-3','Bracket'),('fixtures','bi-calendar-event','Fixtures'),('results','bi-calendar-check','Results')] %}
+  {% for id, icon, label in tabs %}
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if active_tab == id %}active{% endif %}" id="tab-{{ id }}" data-bs-toggle="pill"
+            data-bs-target="#pane-{{ id }}" type="button" role="tab">
+      <i class="bi {{ icon }} me-1"></i>{{ label }}
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+
+<div class="tab-content">
+  <!-- ── Standings ─────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade {% if active_tab == 'standings' %}show active{% endif %}" id="pane-standings" role="tabpanel">
+    {% if group_tables %}
+    <div class="row g-3 stagger">
+      {% for group_name, rows in group_tables | dictsort %}
+      <div class="col-sm-6 col-xl-4">
+        <div class="card">
+          <div class="card-header gold" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em">Group {{ group_name }}</div>
+          <table class="table table-sm mb-0" style="color:var(--text);font-size:.8rem">
+            <thead><tr style="color:var(--text-dim);font-size:.68rem;text-transform:uppercase">
+              <th class="ps-3" style="width:50%">Team</th>
+              <th class="text-center">P</th><th class="text-center">W</th><th class="text-center">D</th><th class="text-center">L</th>
+              <th class="text-center">GD</th><th class="text-center pe-2">Pts</th>
+            </tr></thead>
+            <tbody>
+              {% for row in rows %}
+              <tr style="border-bottom:1px solid var(--border);{% if loop.index <= 2 and row.P > 0 %}background:rgba(0,214,143,.04){% endif %}">
+                <td class="ps-3 py-2">
+                  <span style="margin-right:.3rem">{{ row.team.flag_emoji or FLAG_EMOJIS.get(row.team.code,'') }}</span>
+                  <a href="{{ url_for('team_profile', code=row.team.code) }}" style="color:var(--text);text-decoration:none">{{ row.team.name }}</a>
+                  {% if row.team.eliminated %}<span class="badge ms-1" style="font-size:.55rem;background:var(--red-dim);color:var(--red)">out</span>{% endif %}
+                  {% if loop.index <= 2 and row.P > 0 %}<span style="color:var(--green);font-size:.7rem;margin-left:.25rem">↑</span>{% endif %}
+                </td>
+                <td class="text-center">{{ row.P }}</td><td class="text-center">{{ row.W }}</td>
+                <td class="text-center">{{ row.D }}</td><td class="text-center">{{ row.L }}</td>
+                <td class="text-center" style="color:{% if row.GD > 0 %}var(--green){% elif row.GD < 0 %}var(--red){% else %}var(--text-muted){% endif %}">{{ '+' if row.GD > 0 }}{{ row.GD }}</td>
+                <td class="text-center pe-2 fw-bold" style="color:var(--gold)">{{ row.Pts }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">No group results yet. Hit <strong>Sync</strong> to pull fixtures.</div>
+    {% endif %}
+  </div>
+
+  <!-- ── Bracket ───────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade {% if active_tab == 'bracket' %}show active{% endif %}" id="pane-bracket" role="tabpanel">
+    {% if bracket_cols %}
+    <div class="bracket-scroll-wrap">
+      <div class="bracket-container" id="bracket-container">
+        {% for stage, matches in bracket_cols %}
+        <div class="bracket-col">
+          <div class="bracket-col-label">{{ stage }}</div>
+          <div class="bracket-col-matches">{% for m in matches %}{{ matchup(m) }}{% endfor %}</div>
+        </div>
+        {% endfor %}
+        <svg id="bracket-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible"></svg>
+      </div>
+    </div>
+    {% if third_place %}
+    <div class="section-title mt-4"><i class="bi bi-award me-1"></i>Third-place Play-off</div>
+    <div style="max-width:240px">{% for m in third_place %}{{ matchup(m) }}{% endfor %}</div>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-info"><i class="bi bi-info-circle me-1"></i>The bracket appears once the knockout fixtures are published. Slots show group placeholders (e.g. <em>1A</em>, <em>2B</em>) and fill in as the group stage finishes.</div>
+    {% endif %}
+  </div>
+
+  <!-- ── Fixtures ──────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade {% if active_tab == 'fixtures' %}show active{% endif %}" id="pane-fixtures" role="tabpanel">
+    <div class="d-flex gap-2 mb-3 flex-wrap stage-filter" data-target="fixtures">
+      <button class="btn btn-sm btn-gold" data-stage="">All</button>
+      {% for s in fx_stages %}<button class="btn btn-sm btn-outline-secondary" data-stage="{{ s }}">{{ s }}</button>{% endfor %}
+    </div>
+    {% if fx_days %}
+      {% for label, matches in fx_days %}
+      <div class="section-title mt-4 fx-day"><i class="bi bi-calendar3 me-1"></i>{{ label }}</div>
+      {% for m in matches %}
+        {% set show_score = m.state in ('in', 'post') %}
+        <div class="match-card fx-row {% if m.completed %}played{% endif %} mb-2" data-stage="{{ m.stage }}">
+          <div class="row align-items-center g-2">
+            {{ fx_side(m.home, m.home.score, show_score, 'start') }}
+            <div class="col-auto text-center" style="min-width:74px">
+              {% if m.state == 'in' %}<span class="badge" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,109,.3)">● {{ m.status_detail or 'LIVE' }}</span>
+              {% elif m.state == 'post' %}<span class="match-meta d-block">FT</span>{% if m.home.shootout is not none and m.away.shootout is not none %}<span class="match-meta">pens {{ m.home.shootout }}–{{ m.away.shootout }}</span>{% endif %}
+              {% else %}<span class="score-display" style="font-size:1rem">{{ m.date.strftime('%H:%M') if m.date else 'TBC' }}</span>{% endif %}
+            </div>
+            {{ fx_side(m.away, m.away.score, show_score, 'end') }}
+          </div>
+          <div class="match-meta mt-1 d-flex gap-2 flex-wrap">
+            <span class="badge bg-surface" style="font-size:.6rem">{{ m.stage }}</span>
+            {% if m.venue %}<span><i class="bi bi-geo-alt"></i> {{ m.venue }}</span>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+      {% endfor %}
+      <div class="match-meta mt-3">Live from ESPN · times UTC</div>
+    {% else %}
+    <div class="alert alert-info">No fixtures available right now.</div>
+    {% endif %}
+  </div>
+
+  <!-- ── Results ───────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade {% if active_tab == 'results' %}show active{% endif %}" id="pane-results" role="tabpanel">
+    {% if results_matches %}
+    <div class="d-flex gap-2 mb-3 flex-wrap stage-filter" data-target="results">
+      <button class="btn btn-sm btn-gold" data-stage="">All</button>
+      {% for s in res_stages %}<button class="btn btn-sm btn-outline-secondary" data-stage="{{ s }}">{{ s }}</button>{% endfor %}
+    </div>
+    {% for m in results_matches %}
+      <div class="match-card res-row played mb-2" data-stage="{{ m.stage }}">
+        <div class="row align-items-center g-2">
+          <div class="col">
+            <span style="font-size:1.2rem;margin-right:.4rem">{{ m.home_team.flag_emoji or FLAG_EMOJIS.get(m.home_team.code,'') }}</span>
+            <a href="{{ url_for('team_profile', code=m.home_team.code) }}" class="fw-semibold" style="color:var(--text);text-decoration:none">{{ m.home_team.name }}</a>
+          </div>
+          <div class="col-auto text-center"><span class="score-display">{{ m.result_string }}</span></div>
+          <div class="col text-end">
+            <a href="{{ url_for('team_profile', code=m.away_team.code) }}" class="fw-semibold" style="color:var(--text);text-decoration:none">{{ m.away_team.name }}</a>
+            <span style="font-size:1.2rem;margin-left:.4rem">{{ m.away_team.flag_emoji or FLAG_EMOJIS.get(m.away_team.code,'') }}</span>
+          </div>
+        </div>
+        <div class="match-meta mt-1 d-flex gap-2 flex-wrap">
+          <span class="badge bg-surface" style="font-size:.6rem">{{ m.stage }}</span>
+          {% if m.match_date %}<span>{{ m.match_date.strftime('%d %b %Y %H:%M') }}</span>{% endif %}
+          {% if m.venue %}<span>· {{ m.venue }}</span>{% endif %}
+          {% if m.home_yellows is not none or m.home_reds is not none %}
+          <span class="ms-auto">🟨 {{ m.home_yellows or 0 }} 🟥 {{ m.home_reds or 0 }} &nbsp;|&nbsp; 🟨 {{ m.away_yellows or 0 }} 🟥 {{ m.away_reds or 0 }}</span>
+          {% endif %}
+        </div>
+        {% if is_admin %}
+        <form method="POST" action="{{ url_for('delete_match', mid=m.id) }}" onsubmit="return confirm('Delete this match?')" class="mt-2">
+          <button class="btn btn-outline-danger btn-sm" style="font-size:.72rem"><i class="bi bi-trash"></i> Delete</button>
+        </form>
+        {% endif %}
+      </div>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-info">No results yet. Hit <strong>Sync</strong> once matches kick off.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .tournament-toggle .nav-link { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); }
+  .tournament-toggle .nav-link.active { background: var(--gold-dim); border-color: rgba(240,165,0,.4); color: var(--gold); }
+  .bkt-logo { object-fit: contain; }
+  .bracket-matchup.live { border-left: 3px solid var(--red); }
+  .bracket-matchup.empty { visibility: hidden; }
+  .bracket-col-matches { gap: 0.6rem; }
+  .bkt-slot { font-family:'Bebas Neue',sans-serif; font-size:.8rem; letter-spacing:.05em; color:var(--gold); background:var(--gold-dim); border:1px solid rgba(240,165,0,.25); border-radius:4px; padding:0 .3rem; min-width:30px; text-align:center; }
+  .bkt-name.bkt-ph { color: var(--text-dim); font-size: .74rem; }
+</style>
+<script>
+// ── Stage filters (client-side) ──────────────────────────────────────────────
+document.querySelectorAll('.stage-filter').forEach(bar => {
+  const target = bar.dataset.target;
+  const rowSel = target === 'fixtures' ? '.fx-row' : '.res-row';
+  bar.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const stage = btn.dataset.stage;
+      bar.querySelectorAll('button').forEach(b => { b.classList.remove('btn-gold'); b.classList.add('btn-outline-secondary'); });
+      btn.classList.add('btn-gold'); btn.classList.remove('btn-outline-secondary');
+      document.querySelectorAll(rowSel).forEach(r => {
+        r.style.display = (!stage || r.dataset.stage === stage) ? '' : 'none';
+      });
+      if (target === 'fixtures') {
+        // hide day headers with no visible matches
+        document.querySelectorAll('#pane-fixtures .fx-day').forEach(h => {
+          let n = h.nextElementSibling, any = false;
+          while (n && n.classList.contains('fx-row')) { if (n.style.display !== 'none') any = true; n = n.nextElementSibling; }
+          h.style.display = any ? '' : 'none';
+        });
+      }
+    });
+  });
+});
+
+// ── Bracket connectors (draw when its tab is visible) ────────────────────────
+function drawBracket() {
+  const container = document.getElementById('bracket-container');
+  const svg = document.getElementById('bracket-svg');
+  if (!container || !svg || container.offsetParent === null) return;
+  svg.innerHTML = '';
+  const cols = Array.from(container.querySelectorAll('.bracket-col'));
+  const cRect = container.getBoundingClientRect();
+  svg.setAttribute('width', container.scrollWidth);
+  svg.setAttribute('height', container.scrollHeight);
+  const color = 'rgba(255,255,255,0.12)';
+  for (let c = 0; c + 1 < cols.length; c++) {
+    const A = Array.from(cols[c].querySelectorAll('.bracket-matchup'));
+    const B = Array.from(cols[c + 1].querySelectorAll('.bracket-matchup'));
+    B.forEach((mb, bi) => {
+      const a1 = A[bi * 2], a2 = A[bi * 2 + 1];
+      if (!a1 || !a2) return;
+      const r1 = a1.getBoundingClientRect(), r2 = a2.getBoundingClientRect(), rB = mb.getBoundingClientRect();
+      const ox = cRect.left - container.scrollLeft, oy = cRect.top - container.scrollTop;
+      const x1 = r1.right - ox, y1 = r1.top + r1.height/2 - oy;
+      const x2 = r2.right - ox, y2 = r2.top + r2.height/2 - oy;
+      const xB = rB.left - ox,  yB = rB.top + rB.height/2 - oy;
+      const midX = (x1 + xB) / 2;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M${x1},${y1} H${midX} V${y2} H${x2} M${midX},${(y1+y2)/2} H${xB}`);
+      path.setAttribute('stroke', color); path.setAttribute('stroke-width', '1.5'); path.setAttribute('fill', 'none');
+      svg.appendChild(path);
+    });
+  }
+}
+document.getElementById('tab-bracket')?.addEventListener('shown.bs.tab', drawBracket);
+window.addEventListener('load', () => { if (document.querySelector('#pane-bracket.active')) drawBracket(); });
+window.addEventListener('resize', drawBracket);
+</script>
+{% endblock %}

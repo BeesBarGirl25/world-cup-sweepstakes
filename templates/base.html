@@ -24,13 +24,9 @@
       <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
         {% set pages = [
           ('index',        'bi-bar-chart-line', 'Leaderboard'),
-          ('standings',    'bi-table',          'Standings'),
-          ('bracket',      'bi-diagram-3',      'Bracket'),
-          ('fixtures',     'bi-calendar-event', 'Fixtures'),
+          ('tournament',   'bi-trophy',         'Tournament'),
           ('fun',          'bi-stars',          'Fun'),
           ('participants', 'bi-people',         'Players'),
-          ('draw',         'bi-shuffle',        'Draw'),
-          ('results',      'bi-calendar-check', 'Results'),
           ('prizes',       'bi-cash-coin',      'Prizes'),
         ] %}
         {% for ep, icon, label in pages %}
@@ -40,6 +36,13 @@
           </a>
         </li>
         {% endfor %}
+        {% if is_admin %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'draw' %}active{% endif %}" href="{{ url_for('draw') }}">
+            <i class="bi bi-shuffle me-1"></i>Draw
+          </a>
+        </li>
+        {% endif %}
         <li class="nav-item ms-lg-2">
           <form method="POST" action="{{ url_for('admin_sync') }}" class="d-inline">
             <button type="submit" class="sync-btn"><i class="bi bi-arrow-repeat me-1"></i>Sync</button>

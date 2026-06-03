@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }} – WC 2026{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('tournament', tab='standings') }}" class="match-meta" style="text-decoration:none"><i class="bi bi-arrow-left me-1"></i>Back to tournament</a>
+
+<!-- Header -->
+<div class="hero mb-4" style="padding:1.5rem 2rem">
+  <div class="row align-items-center g-3">
+    <div class="col-auto"><div style="font-size:4rem;line-height:1">{{ team.flag_emoji or FLAG_EMOJIS.get(team.code,'🏳️') }}</div></div>
+    <div class="col">
+      <div class="hero-title" style="font-size:2.4rem">{{ team.name }}</div>
+      <div class="hero-sub d-flex gap-2 align-items-center flex-wrap">
+        <span class="conf-badge conf-{{ team.confederation }}">{{ team.confederation }}</span>
+        <span>Group {{ team.group_name }}</span>
+        {% if team.eliminated %}
+          <span class="badge" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,109,.3)">Out · {{ team.eliminated_stage }}</span>
+        {% elif team.eliminated_stage == 'Champion' %}
+          <span class="badge" style="background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,165,0,.4)">🏆 Champions</span>
+        {% else %}
+          <span class="badge" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(0,214,143,.3)">Still in</span>
+        {% endif %}
+      </div>
+      {% if owners %}
+      <div class="mt-2 d-flex gap-1 flex-wrap align-items-center">
+        <span class="match-meta">Owned by:</span>
+        {% for o in owners %}<a href="{{ url_for('player_profile', pid=o.id) }}" class="owner-chip" style="text-decoration:none">{{ o.name }}</a>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="col-auto text-end">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:3.5rem;line-height:1;color:var(--gold)">{{ team.points }}</div>
+      <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">Sweepstake pts</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Fixtures & results -->
+  <div class="col-lg-7">
+    <div class="section-title"><i class="bi bi-calendar-event me-1"></i>Fixtures & Results</div>
+    {% if matches %}
+      {% for m in matches %}
+      {% set is_home = m.home_team_id == team.id %}
+      <div class="match-card {% if m.played %}played{% endif %} mb-2">
+        <div class="row align-items-center g-2">
+          <div class="col">
+            <span style="font-size:1.1rem;margin-right:.3rem">{{ m.home_team.flag_emoji or FLAG_EMOJIS.get(m.home_team.code,'') }}</span>
+            <a href="{{ url_for('team_profile', code=m.home_team.code) }}" style="color:var(--text);text-decoration:none;{% if is_home %}font-weight:700{% endif %}">{{ m.home_team.name }}</a>
+          </div>
+          <div class="col-auto text-center">
+            {% if m.played %}<span class="score-display" style="font-size:1.1rem">{{ m.result_string }}</span>
+            {% else %}<span class="match-meta">{% if m.match_date %}{{ m.match_date.strftime('%d %b %H:%M') }}{% else %}TBC{% endif %}</span>{% endif %}
+          </div>
+          <div class="col text-end">
+            <a href="{{ url_for('team_profile', code=m.away_team.code) }}" style="color:var(--text);text-decoration:none;{% if not is_home %}font-weight:700{% endif %}">{{ m.away_team.name }}</a>
+            <span style="font-size:1.1rem;margin-left:.3rem">{{ m.away_team.flag_emoji or FLAG_EMOJIS.get(m.away_team.code,'') }}</span>
+          </div>
+        </div>
+        <div class="match-meta mt-1"><span class="badge bg-surface" style="font-size:.6rem">{{ m.stage }}</span>{% if m.venue %} · {{ m.venue }}{% endif %}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="alert alert-info">No fixtures synced yet.</div>
+    {% endif %}
+  </div>
+
+  <!-- Sidebar: group table + sub-competitions -->
+  <div class="col-lg-5">
+    {% if group_table %}
+    <div class="section-title"><i class="bi bi-grid me-1"></i>Group {{ team.group_name }}</div>
+    <div class="card mb-4">
+      <table class="table table-sm mb-0" style="color:var(--text);font-size:.8rem">
+        <thead><tr style="color:var(--text-dim);font-size:.65rem;text-transform:uppercase">
+          <th class="ps-3">Team</th><th class="text-center">P</th><th class="text-center">GD</th><th class="text-center pe-2">Pts</th>
+        </tr></thead>
+        <tbody>
+          {% for row in group_table %}
+          <tr style="border-bottom:1px solid var(--border);{% if row.team.id == team.id %}background:var(--gold-dim){% endif %}">
+            <td class="ps-3 py-2" style="{% if row.team.id == team.id %}color:var(--gold);font-weight:600{% endif %}">
+              {{ row.team.flag_emoji or '' }} {{ row.team.name }}{% if loop.index <= 2 and row.P > 0 %} <span style="color:var(--green)">↑</span>{% endif %}
+            </td>
+            <td class="text-center">{{ row.P }}</td>
+            <td class="text-center" style="color:{% if row.GD > 0 %}var(--green){% elif row.GD < 0 %}var(--red){% else %}var(--text-muted){% endif %}">{{ '+' if row.GD > 0 }}{{ row.GD }}</td>
+            <td class="text-center pe-2 fw-bold" style="color:var(--gold)">{{ row.Pts }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <div class="section-title"><i class="bi bi-stars me-1"></i>Fun Competition Standings</div>
+    {% for fs in fun_standings %}
+    <div class="match-card mb-2 d-flex align-items-center gap-2">
+      <span style="font-size:1.2rem">{{ fs.cat.emoji }}</span>
+      <div class="flex-grow-1">
+        <div style="font-size:.85rem;font-weight:600">{{ fs.cat.name }}</div>
+        {% if fs.value %}<div class="match-meta">{{ fs.value }}</div>{% endif %}
+      </div>
+      {% if fs.is_leader %}
+        <span class="badge" style="background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,165,0,.4)">🏆 Leading</span>
+      {% elif fs.rank %}
+        <span class="badge bg-surface">#{{ fs.rank }} of {{ fs.total }}</span>
+      {% else %}
+        <span class="match-meta">—</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

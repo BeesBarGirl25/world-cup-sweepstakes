@@ -431,6 +431,9 @@ PARTICIPANTS = [
     {"name": "Tom Sheehy",         "entry_fee_paid":  5.00},  # 1 entry
     {"name": "James Bruce",        "entry_fee_paid":  5.00},  # 1 entry
     {"name": "Ben Willis",         "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Wasiq Rehman",       "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Liam Bowmer",        "entry_fee_paid": 15.00},  # 3 entries
+    {"name": "William Carter",     "entry_fee_paid":  5.00},  # 1 entry
 ]
 
 FUN_CATEGORIES = [
@@ -461,6 +464,13 @@ FUN_CATEGORIES = [
         "description": "The team that concedes the fewest goals across the whole tournament before being eliminated (or wins it all).",
         "calc_key": "best_defense",
         "sort_order": 5,
+    },
+    {
+        "name": "Golden Boot",
+        "emoji": "👟",
+        "description": "The team that scores the most goals across the whole tournament. Tiebreaker: fewest goals conceded.",
+        "calc_key": "golden_boot",
+        "sort_order": 4,
     },
     {
         "name": "Penalty Kings",

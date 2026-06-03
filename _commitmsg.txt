@@ -1,0 +1,18 @@
+Add Golden Boot + country profiles; merge tournament views; new entrants; admin-only draw
+
+- Golden Boot fun category: team with most goals scored (ESPN-derived),
+  tiebreak fewest conceded. New Team.total_goals_for property.
+- Combined Standings / Bracket / Fixtures / Results into one /tournament page
+  with a pill toggle; old routes now redirect there. Client-side stage filters
+  for fixtures/results; bracket connectors redraw when its tab is shown.
+- Country profile page (/team/<code>): flag, group table, fixtures & results,
+  owners, and where the team ranks in each fun sub-competition. Linked from
+  standings, results, fun and player pages.
+- Country flags shown next to names throughout; team names link to profiles.
+- Draw page is now admin-only (route gated + nav link hidden from public).
+- Seed: added Wasiq Rehman (4), Liam Bowmer (3), William Carter (1).
+  init_db now adds missing participants idempotently so new entrants appear on
+  deploy without wiping data.
+- Removed standalone standings/results/fixtures/bracket templates (merged).
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
