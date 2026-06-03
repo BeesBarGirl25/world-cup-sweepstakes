@@ -467,6 +467,40 @@ def delete_match(mid):
     return redirect(url_for("results"))
 
 
+# ── Fixtures (live from ESPN) ─────────────────────────────────────────────────
+
+@app.route("/fixtures")
+def fixtures():
+    from espn import fetch_fixtures, fixtures_by_date, STAGE_SLUG_MAP
+    all_fixtures = fetch_fixtures()
+    stage_filter = request.args.get("stage", "")
+    if stage_filter:
+        shown = [f for f in all_fixtures if f["stage"] == stage_filter]
+    else:
+        shown = all_fixtures
+    # Preserve tournament order of stages for the filter chips.
+    seen, stages = set(), []
+    for f in all_fixtures:
+        if f["stage"] not in seen:
+            seen.add(f["stage"]); stages.append(f["stage"])
+    return render_template(
+        "fixtures.html",
+        days=fixtures_by_date(shown),
+        stages=stages,
+        stage_filter=stage_filter,
+        total=len(all_fixtures),
+    )
+
+
+# ── Bracket (live from ESPN) ──────────────────────────────────────────────────
+
+@app.route("/bracket")
+def bracket():
+    from espn import fetch_fixtures, bracket_tree
+    columns, third_place = bracket_tree(fetch_fixtures())
+    return render_template("bracket.html", columns=columns, third_place=third_place)
+
+
 # ── Leaderboard ──────────────────────────────────────────────────────────────
 
 @app.route("/leaderboard")
@@ -534,7 +568,7 @@ def delete_prize(pid):
 
 @app.route("/admin/sync", methods=["POST"])
 def admin_sync():
-    from sync import sync_fixtures
+    from espn import sync_fixtures
     result = sync_fixtures(app)
     if result.get("error"):
         flash(f"Sync failed: {result['error']}", "danger")
@@ -671,6 +705,29 @@ def admin_logout():
     return redirect(url_for("index"))
 
 
+@app.route("/admin/reseed", methods=["POST"])
+def reseed_teams():
+    """Wipe teams/matches/assignments and re-seed from seed_data.TEAMS.
+
+    Use when the provisional team list/groups need replacing with the real
+    draw. This clears the draw — re-run it afterwards on the Draw page.
+    """
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("index"))
+    FunWinner.query.delete()
+    Assignment.query.delete()
+    Match.query.delete()
+    Team.query.delete()
+    db.session.commit()
+    for t in TEAMS:
+        db.session.add(Team(**t, flag_emoji=FLAG_EMOJIS.get(t["code"], "🏳️")))
+    db.session.commit()
+    flash(f"Re-seeded {len(TEAMS)} teams. Matches and the draw were cleared — "
+          "re-run the draw on the Draw page.", "success")
+    return redirect(url_for("draw"))
+
+
 @app.route("/admin/publish-draw", methods=["POST"])
 def publish_draw():
     if not is_admin():
@@ -704,7 +761,7 @@ import os as _os
 if not app.debug or _os.environ.get("WERKZEUG_RUN_MAIN") == "true":
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
-        from sync import sync_fixtures as _sync
+        from espn import sync_fixtures as _sync
         _scheduler = BackgroundScheduler(daemon=True)
         _scheduler.add_job(lambda: _sync(app), "interval", hours=3, id="sync_fixtures")
         _scheduler.start()

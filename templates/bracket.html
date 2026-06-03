@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Bracket – WC 2026{% endblock %}
+
+{% macro team_row(team, is_winner, show_score) %}
+  <div class="bracket-team {% if is_winner %}winner{% endif %}">
+    {% if team.placeholder %}
+      <span class="bkt-slot" title="{{ team.name }}">{{ team.slot or '—' }}</span>
+      <span class="bkt-name bkt-ph" title="{{ team.name }}">{{ team.name }}</span>
+    {% else %}
+      {% if team.logo %}<img class="bkt-logo" src="{{ team.logo }}" alt="" width="18" height="18" loading="lazy">
+      {% else %}<span class="bkt-flag">{{ FLAG_EMOJIS.get(team.abbrev, '🏳️') }}</span>{% endif %}
+      <span class="bkt-name">{{ team.name }}</span>
+      {% if show_score %}
+        <span class="bkt-score">{{ team.score if team.score is not none else '' }}{% if team.shootout is not none %}<sup style="font-size:.6em">({{ team.shootout }})</sup>{% endif %}</span>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro matchup(m) %}
+  {% if not m %}
+    <div class="bracket-matchup empty"></div>
+  {% else %}
+  {% set hs, as = m.home.score, m.away.score %}
+  {% set hp, ap = m.home.shootout, m.away.shootout %}
+  {% set pens = hp is not none and ap is not none %}
+  {% set home_win = m.completed and ((pens and hp > ap) or (not pens and hs is not none and as is not none and hs > as)) %}
+  {% set away_win = m.completed and ((pens and ap > hp) or (not pens and hs is not none and as is not none and as > hs)) %}
+  {% set show_score = m.state in ('in', 'post') %}
+  <div class="bracket-matchup {% if m.completed %}played{% endif %}{% if m.state == 'in' %} live{% endif %}">
+    {{ team_row(m.home, home_win, show_score) }}
+    {{ team_row(m.away, away_win, show_score) }}
+    <div class="bkt-date">
+      {% if m.state == 'in' %}<span style="color:var(--red)">● LIVE</span>
+      {% elif m.date %}{{ m.date.strftime('%d %b') }}{% else %}TBC{% endif %}
+    </div>
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-3 flex-wrap">
+  <h1 class="h4 mb-0"><i class="bi bi-diagram-3 me-2" style="color:var(--gold)"></i>Knockout Bracket</h1>
+  <div class="ms-auto match-meta">Live from ESPN · slots fill in as the group stage finishes</div>
+</div>
+
+{% if columns %}
+<div class="bracket-scroll-wrap">
+  <div class="bracket-container" id="bracket-container">
+    {% for stage, matches in columns %}
+    <div class="bracket-col">
+      <div class="bracket-col-label">{{ stage }}</div>
+      <div class="bracket-col-matches">
+        {% for m in matches %}{{ matchup(m) }}{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    <svg id="bracket-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible"></svg>
+  </div>
+</div>
+
+{% if third_place %}
+<div class="section-title mt-4"><i class="bi bi-award me-1"></i>Third-place Play-off</div>
+<div style="max-width:240px">{% for m in third_place %}{{ matchup(m) }}{% endfor %}</div>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-1"></i>
+  The bracket appears once the knockout fixtures are published. Each slot shows
+  its group placeholder (e.g. <em>1A</em> = winner of Group A, <em>2B</em> =
+  runner-up of Group B) and fills in with the real team as the group stage finishes.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .bkt-logo { object-fit: contain; }
+  .bracket-matchup.live { border-left: 3px solid var(--red); }
+  .bracket-matchup.empty { visibility: hidden; }
+  .bracket-col-matches { gap: 0.6rem; }
+  .bkt-slot {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    color: var(--gold);
+    background: var(--gold-dim);
+    border: 1px solid rgba(240,165,0,0.25);
+    border-radius: 4px;
+    padding: 0 0.3rem;
+    min-width: 30px;
+    text-align: center;
+  }
+  .bkt-name.bkt-ph { color: var(--text-dim); font-size: 0.74rem; }
+</style>
+<script>
+function drawBracket() {
+  const container = document.getElementById('bracket-container');
+  const svg = document.getElementById('bracket-svg');
+  if (!container || !svg) return;
+  svg.innerHTML = '';
+  const cols = Array.from(container.querySelectorAll('.bracket-col'));
+  const cRect = container.getBoundingClientRect();
+  svg.setAttribute('width', container.scrollWidth);
+  svg.setAttribute('height', container.scrollHeight);
+  const color = 'rgba(255,255,255,0.12)';
+
+  for (let c = 0; c + 1 < cols.length; c++) {
+    const A = Array.from(cols[c].querySelectorAll('.bracket-matchup'));
+    const B = Array.from(cols[c + 1].querySelectorAll('.bracket-matchup'));
+    B.forEach((mb, bi) => {
+      const a1 = A[bi * 2], a2 = A[bi * 2 + 1];
+      if (!a1 || !a2) return;
+      const r1 = a1.getBoundingClientRect();
+      const r2 = a2.getBoundingClientRect();
+      const rB = mb.getBoundingClientRect();
+      const ox = cRect.left - container.scrollLeft;
+      const oy = cRect.top - container.scrollTop;
+      const x1 = r1.right - ox, y1 = r1.top + r1.height / 2 - oy;
+      const x2 = r2.right - ox, y2 = r2.top + r2.height / 2 - oy;
+      const xB = rB.left - ox,  yB = rB.top + rB.height / 2 - oy;
+      const midX = (x1 + xB) / 2;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M${x1},${y1} H${midX} V${y2} H${x2} M${midX},${(y1 + y2) / 2} H${xB}`);
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('fill', 'none');
+      svg.appendChild(path);
+    });
+  }
+}
+window.addEventListener('load', drawBracket);
+window.addEventListener('resize', drawBracket);
+</script>
+{% endblock %}

@@ -3,19 +3,20 @@
 Groups are provisional — update once the official draw groups are confirmed.
 """
 
+# Keyed by ESPN team abbreviation (matches the codes we seed below).
 FLAG_EMOJIS = {
-    "USA": "🇺🇸", "PAN": "🇵🇦", "HON": "🇭🇳", "MAR": "🇲🇦",
-    "MEX": "🇲🇽", "JAM": "🇯🇲", "ARG": "🇦🇷", "CHI": "🇨🇱",
-    "CAN": "🇨🇦", "CRC": "🇨🇷", "BRA": "🇧🇷", "ECU": "🇪🇨",
-    "GER": "🇩🇪", "ENG": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "COL": "🇨🇴", "URU": "🇺🇾",
-    "FRA": "🇫🇷", "ESP": "🇪🇸", "NGA": "🇳🇬", "SEN": "🇸🇳",
-    "POR": "🇵🇹", "NED": "🇳🇱", "JPN": "🇯🇵", "KOR": "🇰🇷",
-    "BEL": "🇧🇪", "ITA": "🇮🇹", "EGY": "🇪🇬", "RSA": "🇿🇦",
-    "AUT": "🇦🇹", "SUI": "🇨🇭", "AUS": "🇦🇺", "KSA": "🇸🇦",
-    "CRO": "🇭🇷", "DEN": "🇩🇰", "IRN": "🇮🇷", "VEN": "🇻🇪",
-    "SCO": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "TUR": "🇹🇷", "PAR": "🇵🇾", "ALG": "🇩🇿",
-    "POL": "🇵🇱", "SRB": "🇷🇸", "TUN": "🇹🇳", "BOL": "🇧🇴",
-    "ROU": "🇷🇴", "SVK": "🇸🇰", "CMR": "🇨🇲", "NZL": "🇳🇿",
+    "MEX": "🇲🇽", "CZE": "🇨🇿", "KOR": "🇰🇷", "RSA": "🇿🇦",
+    "CAN": "🇨🇦", "BIH": "🇧🇦", "SUI": "🇨🇭", "QAT": "🇶🇦",
+    "BRA": "🇧🇷", "SCO": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "HAI": "🇭🇹", "MAR": "🇲🇦",
+    "PAR": "🇵🇾", "TUR": "🇹🇷", "AUS": "🇦🇺", "USA": "🇺🇸",
+    "ECU": "🇪🇨", "GER": "🇩🇪", "CIV": "🇨🇮", "CUW": "🇨🇼",
+    "NED": "🇳🇱", "SWE": "🇸🇪", "JPN": "🇯🇵", "TUN": "🇹🇳",
+    "BEL": "🇧🇪", "IRN": "🇮🇷", "EGY": "🇪🇬", "NZL": "🇳🇿",
+    "ESP": "🇪🇸", "URU": "🇺🇾", "KSA": "🇸🇦", "CPV": "🇨🇻",
+    "NOR": "🇳🇴", "FRA": "🇫🇷", "SEN": "🇸🇳", "IRQ": "🇮🇶",
+    "ARG": "🇦🇷", "AUT": "🇦🇹", "ALG": "🇩🇿", "JOR": "🇯🇴",
+    "COL": "🇨🇴", "POR": "🇵🇹", "UZB": "🇺🇿", "COD": "🇨🇩",
+    "ENG": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "CRO": "🇭🇷", "PAN": "🇵🇦", "GHA": "🇬🇭",
 }
 
 TEAM_FACTS = {
@@ -259,69 +260,140 @@ TEAM_FACTS = {
         "At WC 2010, drew all three of their group matches without losing — the only unbeaten team in the entire group stage.",
         "One of only a handful of nations from Oceania ever to qualify for a World Cup — beating Australia in the OFC playoff.",
     ],
+    "CZE": [
+        "As Czechoslovakia they reached two World Cup finals (1934, 1962) — losing both, but to legendary Italy and Brazil sides.",
+        "Pavel Nedvěd, their Ballon d'Or winner, is one of the greatest midfielders of the modern era.",
+        "Beat the Netherlands 3–2 at Euro 2004 in one of the greatest comeback group games ever — coming back from 2–0 down.",
+    ],
+    "BIH": [
+        "Their only previous World Cup was 2014 — Edin Džeko and a young squad announced themselves on the world stage.",
+        "Built almost entirely from a generation born during the Bosnian War — football became a symbol of national unity.",
+        "Miralem Pjanić and Edin Džeko gave them one of the most talented spines any small nation has ever fielded.",
+    ],
+    "QAT": [
+        "Hosted the 2022 World Cup — the first ever held in the Middle East and the first in November/December.",
+        "Won the 2019 AND 2023 AFC Asian Cups back-to-back — establishing themselves as a genuine Asian powerhouse.",
+        "Almoez Ali scored a record 9 goals at the 2019 Asian Cup — including an outrageous overhead kick in the final.",
+    ],
+    "HAI": [
+        "Their only previous World Cup was 1974 — where Emmanuel Sanon famously ended Dino Zoff's 1,142-minute clean-sheet run vs Italy.",
+        "One of the most passionate footballing nations in the Caribbean despite enormous off-field hardship.",
+        "Qualifying for 2026 sparked celebrations across the entire Haitian diaspora — a rare moment of national joy.",
+    ],
+    "CIV": [
+        "The 'Elephants' — won the Africa Cup of Nations on home soil in 2024 after a remarkable run from near-elimination.",
+        "Didier Drogba once helped broker a ceasefire in Ivory Coast's civil war by appealing to both sides on TV.",
+        "Their golden generation of Drogba, the Touré brothers and Gervinho never got past the WC group stage — a source of national heartbreak.",
+    ],
+    "CUW": [
+        "With ~150,000 people, Curaçao are one of the smallest nations EVER to reach a World Cup — a genuine fairy tale.",
+        "A tiny Dutch Caribbean island, they draw on players with Netherlands eredivisie pedigree through heritage.",
+        "Former Dutch international Patrick Kluivert has been part of the project to lift this island onto the world stage.",
+    ],
+    "SWE": [
+        "Finished runners-up at the 1958 World Cup on home soil — losing the final to a 17-year-old Pelé and Brazil.",
+        "Reached the semi-finals at USA '94, with Tomas Brolin and Kennet Andersson lighting up the tournament.",
+        "Zlatan Ibrahimović — their greatest ever player — sadly never shone at a World Cup, but this is a new generation.",
+    ],
+    "NOR": [
+        "Boast Erling Haaland and Martin Ødegaard — arguably the most exciting attacking duo any nation will bring to 2026.",
+        "Famously never lost to Brazil — beating them at France '98 and holding them in 1997. A perfect record vs the five-time champions.",
+        "Their last World Cup was 1998 — ending a long wait, they arrive as one of the tournament's dark horses.",
+    ],
+    "CPV": [
+        "The 'Blue Sharks' — a tiny Atlantic island nation of ~500,000 reaching their first ever World Cup. Pure history.",
+        "One of the smallest countries by population ever to qualify — a staggering achievement for African football.",
+        "Beat Cameroon, Angola and others in qualifying — proof that the Cape Verde footballing project has truly arrived.",
+    ],
+    "IRQ": [
+        "Stunned the world by winning the 2007 Asian Cup — months after war ravaged the country. The whole nation wept with joy.",
+        "Younis Mahmoud's winning header in that 2007 final is one of Asian football's most iconic moments.",
+        "Returning to the World Cup for the first time since 1986 — football remains a unifying force across Iraq.",
+    ],
+    "JOR": [
+        "Reached their first ever Asian Cup final in 2024 — knocking out South Korea along the way in a famous run.",
+        "Making their World Cup debut in 2026 — a historic first for the Jordanian game.",
+        "Musa Al-Taamari, their flying winger, is the star man Jordanians hope can shock the world.",
+    ],
+    "UZB": [
+        "Making their World Cup debut in 2026 after decades of agonisingly narrow qualification near-misses.",
+        "One of Central Asia's footballing giants — they've reached multiple Asian Cup quarter-finals and beyond.",
+        "Qualification sparked national celebrations — a landmark moment for Uzbek sport.",
+    ],
+    "COD": [
+        "As Zaire, they were the first Black African nation to reach a World Cup, in 1974.",
+        "The 'Leopards' won the Africa Cup of Nations in 1968 and 1974 — a proud continental pedigree.",
+        "Home to a vast pool of talent, DR Congo's return to the World Cup stage has been decades in the making.",
+    ],
+    "GHA": [
+        "The 'Black Stars' — agonisingly missed a last-minute penalty vs Uruguay in the 2010 quarter-final, denied a historic semi-final.",
+        "Asamoah Gyan, their talisman, remains Africa's all-time leading World Cup goalscorer.",
+        "Four-time Africa Cup of Nations winners and one of the continent's most storied footballing nations.",
+    ],
 }
 
+# Official 2026 FIFA World Cup draw — groups, codes and names from ESPN.
 TEAMS = [
     # Group A
-    {"name": "USA", "code": "USA", "group_name": "A", "confederation": "CONCACAF"},
-    {"name": "Panama", "code": "PAN", "group_name": "A", "confederation": "CONCACAF"},
-    {"name": "Honduras", "code": "HON", "group_name": "A", "confederation": "CONCACAF"},
-    {"name": "Morocco", "code": "MAR", "group_name": "A", "confederation": "CAF"},
+    {"name": "Mexico", "code": "MEX", "group_name": "A", "confederation": "CONCACAF"},
+    {"name": "Czechia", "code": "CZE", "group_name": "A", "confederation": "UEFA"},
+    {"name": "South Korea", "code": "KOR", "group_name": "A", "confederation": "AFC"},
+    {"name": "South Africa", "code": "RSA", "group_name": "A", "confederation": "CAF"},
     # Group B
-    {"name": "Mexico", "code": "MEX", "group_name": "B", "confederation": "CONCACAF"},
-    {"name": "Jamaica", "code": "JAM", "group_name": "B", "confederation": "CONCACAF"},
-    {"name": "Argentina", "code": "ARG", "group_name": "B", "confederation": "CONMEBOL"},
-    {"name": "Chile", "code": "CHI", "group_name": "B", "confederation": "CONMEBOL"},
+    {"name": "Canada", "code": "CAN", "group_name": "B", "confederation": "CONCACAF"},
+    {"name": "Bosnia & Herzegovina", "code": "BIH", "group_name": "B", "confederation": "UEFA"},
+    {"name": "Switzerland", "code": "SUI", "group_name": "B", "confederation": "UEFA"},
+    {"name": "Qatar", "code": "QAT", "group_name": "B", "confederation": "AFC"},
     # Group C
-    {"name": "Canada", "code": "CAN", "group_name": "C", "confederation": "CONCACAF"},
-    {"name": "Costa Rica", "code": "CRC", "group_name": "C", "confederation": "CONCACAF"},
     {"name": "Brazil", "code": "BRA", "group_name": "C", "confederation": "CONMEBOL"},
-    {"name": "Ecuador", "code": "ECU", "group_name": "C", "confederation": "CONMEBOL"},
+    {"name": "Scotland", "code": "SCO", "group_name": "C", "confederation": "UEFA"},
+    {"name": "Haiti", "code": "HAI", "group_name": "C", "confederation": "CONCACAF"},
+    {"name": "Morocco", "code": "MAR", "group_name": "C", "confederation": "CAF"},
     # Group D
-    {"name": "Germany", "code": "GER", "group_name": "D", "confederation": "UEFA"},
-    {"name": "England", "code": "ENG", "group_name": "D", "confederation": "UEFA"},
-    {"name": "Colombia", "code": "COL", "group_name": "D", "confederation": "CONMEBOL"},
-    {"name": "Uruguay", "code": "URU", "group_name": "D", "confederation": "CONMEBOL"},
+    {"name": "Paraguay", "code": "PAR", "group_name": "D", "confederation": "CONMEBOL"},
+    {"name": "Türkiye", "code": "TUR", "group_name": "D", "confederation": "UEFA"},
+    {"name": "Australia", "code": "AUS", "group_name": "D", "confederation": "AFC"},
+    {"name": "USA", "code": "USA", "group_name": "D", "confederation": "CONCACAF"},
     # Group E
-    {"name": "France", "code": "FRA", "group_name": "E", "confederation": "UEFA"},
-    {"name": "Spain", "code": "ESP", "group_name": "E", "confederation": "UEFA"},
-    {"name": "Nigeria", "code": "NGA", "group_name": "E", "confederation": "CAF"},
-    {"name": "Senegal", "code": "SEN", "group_name": "E", "confederation": "CAF"},
+    {"name": "Ecuador", "code": "ECU", "group_name": "E", "confederation": "CONMEBOL"},
+    {"name": "Germany", "code": "GER", "group_name": "E", "confederation": "UEFA"},
+    {"name": "Ivory Coast", "code": "CIV", "group_name": "E", "confederation": "CAF"},
+    {"name": "Curaçao", "code": "CUW", "group_name": "E", "confederation": "CONCACAF"},
     # Group F
-    {"name": "Portugal", "code": "POR", "group_name": "F", "confederation": "UEFA"},
     {"name": "Netherlands", "code": "NED", "group_name": "F", "confederation": "UEFA"},
+    {"name": "Sweden", "code": "SWE", "group_name": "F", "confederation": "UEFA"},
     {"name": "Japan", "code": "JPN", "group_name": "F", "confederation": "AFC"},
-    {"name": "South Korea", "code": "KOR", "group_name": "F", "confederation": "AFC"},
+    {"name": "Tunisia", "code": "TUN", "group_name": "F", "confederation": "CAF"},
     # Group G
     {"name": "Belgium", "code": "BEL", "group_name": "G", "confederation": "UEFA"},
-    {"name": "Italy", "code": "ITA", "group_name": "G", "confederation": "UEFA"},
+    {"name": "Iran", "code": "IRN", "group_name": "G", "confederation": "AFC"},
     {"name": "Egypt", "code": "EGY", "group_name": "G", "confederation": "CAF"},
-    {"name": "South Africa", "code": "RSA", "group_name": "G", "confederation": "CAF"},
+    {"name": "New Zealand", "code": "NZL", "group_name": "G", "confederation": "OFC"},
     # Group H
-    {"name": "Austria", "code": "AUT", "group_name": "H", "confederation": "UEFA"},
-    {"name": "Switzerland", "code": "SUI", "group_name": "H", "confederation": "UEFA"},
-    {"name": "Australia", "code": "AUS", "group_name": "H", "confederation": "AFC"},
+    {"name": "Spain", "code": "ESP", "group_name": "H", "confederation": "UEFA"},
+    {"name": "Uruguay", "code": "URU", "group_name": "H", "confederation": "CONMEBOL"},
     {"name": "Saudi Arabia", "code": "KSA", "group_name": "H", "confederation": "AFC"},
+    {"name": "Cape Verde", "code": "CPV", "group_name": "H", "confederation": "CAF"},
     # Group I
-    {"name": "Croatia", "code": "CRO", "group_name": "I", "confederation": "UEFA"},
-    {"name": "Denmark", "code": "DEN", "group_name": "I", "confederation": "UEFA"},
-    {"name": "Iran", "code": "IRN", "group_name": "I", "confederation": "AFC"},
-    {"name": "Venezuela", "code": "VEN", "group_name": "I", "confederation": "CONMEBOL"},
+    {"name": "Norway", "code": "NOR", "group_name": "I", "confederation": "UEFA"},
+    {"name": "France", "code": "FRA", "group_name": "I", "confederation": "UEFA"},
+    {"name": "Senegal", "code": "SEN", "group_name": "I", "confederation": "CAF"},
+    {"name": "Iraq", "code": "IRQ", "group_name": "I", "confederation": "AFC"},
     # Group J
-    {"name": "Scotland", "code": "SCO", "group_name": "J", "confederation": "UEFA"},
-    {"name": "Turkey", "code": "TUR", "group_name": "J", "confederation": "UEFA"},
-    {"name": "Paraguay", "code": "PAR", "group_name": "J", "confederation": "CONMEBOL"},
+    {"name": "Argentina", "code": "ARG", "group_name": "J", "confederation": "CONMEBOL"},
+    {"name": "Austria", "code": "AUT", "group_name": "J", "confederation": "UEFA"},
     {"name": "Algeria", "code": "ALG", "group_name": "J", "confederation": "CAF"},
+    {"name": "Jordan", "code": "JOR", "group_name": "J", "confederation": "AFC"},
     # Group K
-    {"name": "Poland", "code": "POL", "group_name": "K", "confederation": "UEFA"},
-    {"name": "Serbia", "code": "SRB", "group_name": "K", "confederation": "UEFA"},
-    {"name": "Tunisia", "code": "TUN", "group_name": "K", "confederation": "CAF"},
-    {"name": "Bolivia", "code": "BOL", "group_name": "K", "confederation": "CONMEBOL"},
+    {"name": "Colombia", "code": "COL", "group_name": "K", "confederation": "CONMEBOL"},
+    {"name": "Portugal", "code": "POR", "group_name": "K", "confederation": "UEFA"},
+    {"name": "Uzbekistan", "code": "UZB", "group_name": "K", "confederation": "AFC"},
+    {"name": "Congo DR", "code": "COD", "group_name": "K", "confederation": "CAF"},
     # Group L
-    {"name": "Romania", "code": "ROU", "group_name": "L", "confederation": "UEFA"},
-    {"name": "Slovakia", "code": "SVK", "group_name": "L", "confederation": "UEFA"},
-    {"name": "Cameroon", "code": "CMR", "group_name": "L", "confederation": "CAF"},
-    {"name": "New Zealand", "code": "NZL", "group_name": "L", "confederation": "OFC"},
+    {"name": "England", "code": "ENG", "group_name": "L", "confederation": "UEFA"},
+    {"name": "Croatia", "code": "CRO", "group_name": "L", "confederation": "UEFA"},
+    {"name": "Panama", "code": "PAN", "group_name": "L", "confederation": "CONCACAF"},
+    {"name": "Ghana", "code": "GHA", "group_name": "L", "confederation": "CAF"},
 ]
 
 # Quantexa sweepstake participants — processed from contributions CSV

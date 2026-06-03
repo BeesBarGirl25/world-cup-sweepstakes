@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Fixtures – WC 2026{% endblock %}
+
+{% macro side(team, score, show_score, align) %}
+  <div class="col d-flex align-items-center gap-2 {% if align == 'end' %}justify-content-end text-end flex-row-reverse{% endif %}">
+    {% if team.placeholder %}
+      <span class="bkt-flag">🏳️</span>
+      <span class="fw-semibold" style="color:var(--text-muted)">{{ team.name }}</span>
+    {% else %}
+      {% if team.logo %}<img src="{{ team.logo }}" alt="" width="22" height="22" loading="lazy" style="object-fit:contain">
+      {% else %}<span class="bkt-flag">{{ FLAG_EMOJIS.get(team.abbrev, '🏳️') }}</span>{% endif %}
+      <span class="fw-semibold">{{ team.name }}</span>
+    {% endif %}
+    {% if show_score %}<span class="score-display ms-2" style="font-size:1.15rem;padding:0 .55rem">{{ score if score is not none else '–' }}</span>{% endif %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-3 flex-wrap">
+  <h1 class="h4 mb-0"><i class="bi bi-calendar-event me-2" style="color:var(--gold)"></i>Fixtures</h1>
+  <span class="badge bg-surface">{{ total }} matches</span>
+  <div class="ms-auto d-flex gap-2 align-items-center">
+    <span class="match-meta">Live from ESPN · times UTC</span>
+    <form method="POST" action="{{ url_for('admin_sync') }}">
+      <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-repeat me-1"></i>Sync</button>
+    </form>
+  </div>
+</div>
+
+<!-- Stage filter -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <a href="{{ url_for('fixtures') }}" class="btn btn-sm {% if not stage_filter %}btn-gold{% else %}btn-outline-secondary{% endif %}">All</a>
+  {% for s in stages %}
+  <a href="{{ url_for('fixtures', stage=s) }}" class="btn btn-sm {% if stage_filter == s %}btn-gold{% else %}btn-outline-secondary{% endif %}">{{ s }}</a>
+  {% endfor %}
+</div>
+
+{% if days %}
+  {% for label, matches in days %}
+  <div class="section-title mt-4"><i class="bi bi-calendar3 me-1"></i>{{ label }}</div>
+  {% for m in matches %}
+    {% set show_score = m.state in ('in', 'post') %}
+    <div class="match-card {% if m.completed %}played{% endif %} mb-2">
+      <div class="row align-items-center g-2">
+        {{ side(m.home, m.home.score, show_score, 'start') }}
+        <div class="col-auto text-center" style="min-width:74px">
+          {% if m.state == 'in' %}
+            <span class="badge" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,109,.3)">● {{ m.status_detail or 'LIVE' }}</span>
+          {% elif m.state == 'post' %}
+            <span class="match-meta d-block">FT</span>
+            {% if m.home.shootout is not none and m.away.shootout is not none %}
+              <span class="match-meta">pens {{ m.home.shootout }}–{{ m.away.shootout }}</span>
+            {% endif %}
+          {% else %}
+            <span class="score-display" style="font-size:1rem">{{ m.date.strftime('%H:%M') if m.date else 'TBC' }}</span>
+          {% endif %}
+        </div>
+        {{ side(m.away, m.away.score, show_score, 'end') }}
+      </div>
+      <div class="match-meta mt-1 d-flex gap-2 flex-wrap">
+        <span class="badge bg-surface" style="font-size:.6rem">{{ m.stage }}</span>
+        {% if m.venue %}<span><i class="bi bi-geo-alt"></i> {{ m.venue }}</span>{% endif %}
+      </div>
+    </div>
+  {% endfor %}
+  {% endfor %}
+{% else %}
+<div class="alert alert-info"><i class="bi bi-info-circle me-1"></i>No fixtures available right now. Try again shortly.</div>
+{% endif %}
+{% endblock %}

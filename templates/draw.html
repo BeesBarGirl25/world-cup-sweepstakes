@@ -28,6 +28,12 @@
           <button class="btn btn-gold px-4"><i class="bi bi-play-fill me-1"></i>Run Draw</button>
         </form>
       {% endif %}
+      <form method="POST" action="{{ url_for('reseed_teams') }}"
+            onsubmit="return confirm('Re-seed the real 2026 teams? This DELETES all teams, matches AND the draw. You will need to run the draw again afterwards.')">
+        <button class="btn btn-outline-danger btn-sm" title="Replace provisional teams with the real 2026 draw">
+          <i class="bi bi-globe me-1"></i>Re-seed teams
+        </button>
+      </form>
     {% elif not draw_public %}
       {# non-admin, not published - show nothing #}
     {% endif %}
