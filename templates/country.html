@@ -7,7 +7,16 @@
 <!-- Header -->
 <div class="hero mb-4" style="padding:1.5rem 2rem">
   <div class="row align-items-center g-3">
-    <div class="col-auto"><div style="font-size:4rem;line-height:1">{{ team.flag_emoji or FLAG_EMOJIS.get(team.code,'🏳️') }}</div></div>
+    <div class="col-auto">
+      {% set song = TEAM_SONGS.get(team.code) %}
+      {% if song %}
+      <a href="{{ song[1] }}" target="_blank" rel="noopener" class="flag-egg has-song" title="🎵 {{ song[0] }}"
+         style="font-size:4rem;line-height:1;text-decoration:none;display:inline-block">{{ team.flag_emoji or FLAG_EMOJIS.get(team.code,'🏳️') }}<span class="song-note">🎵</span></a>
+      {% else %}
+      <div class="flag-egg" onclick="flagParty(this)" title="Go on, give us a tune"
+           style="font-size:4rem;line-height:1;cursor:pointer;display:inline-block">{{ team.flag_emoji or FLAG_EMOJIS.get(team.code,'🏳️') }}</div>
+      {% endif %}
+    </div>
     <div class="col">
       <div class="hero-title" style="font-size:2.4rem">{{ team.name }}</div>
       <div class="hero-sub d-flex gap-2 align-items-center flex-wrap">
@@ -155,5 +164,18 @@
   .prog-eliminated { border-color:rgba(255,77,109,.4); } .prog-eliminated .prog-icon { color:var(--red); }
   .prog-current, .prog-next { border-color:rgba(240,165,0,.4); } .prog-current .prog-icon, .prog-next .prog-icon { color:var(--gold); }
   .prog-future, .prog-locked, .prog-upcoming { opacity:.5; }
+
+  .flag-egg { position:relative; transition:transform .2s ease; }
+  .flag-egg:hover { transform:scale(1.12) rotate(-6deg); }
+  .flag-egg.wiggle { animation:flagWiggle .5s ease; }
+  @keyframes flagWiggle { 0%,100%{transform:rotate(0)} 20%{transform:rotate(-14deg)} 40%{transform:rotate(12deg)} 60%{transform:rotate(-8deg)} 80%{transform:rotate(5deg)} }
+  .song-note { position:absolute; top:-6px; right:-10px; font-size:1.1rem; opacity:0; transition:opacity .2s ease, transform .2s ease; }
+  .flag-egg.has-song:hover .song-note { opacity:1; transform:translateY(-4px); }
 </style>
+<script>
+function flagParty(el) {
+  el.classList.remove('wiggle'); void el.offsetWidth; el.classList.add('wiggle');
+  if (typeof launchConfettiGlobal === 'function') launchConfettiGlobal();
+}
+</script>
 {% endblock %}

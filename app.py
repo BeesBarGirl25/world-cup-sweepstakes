@@ -3,7 +3,7 @@ import random
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from models import db, Team, Participant, Assignment, Match, Prize, FunCategory, FunWinner, AppSettings
-from seed_data import TEAMS, PARTICIPANTS, FUN_CATEGORIES, FLAG_EMOJIS, TEAM_FACTS
+from seed_data import TEAMS, PARTICIPANTS, FUN_CATEGORIES, FLAG_EMOJIS, TEAM_FACTS, TEAM_SONGS
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
@@ -22,6 +22,7 @@ def inject_globals():
     return {
         "is_admin": is_admin(),
         "FLAG_EMOJIS": FLAG_EMOJIS,
+        "TEAM_SONGS": TEAM_SONGS,
     }
 
 

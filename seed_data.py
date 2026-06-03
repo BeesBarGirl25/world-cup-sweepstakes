@@ -19,6 +19,27 @@ FLAG_EMOJIS = {
     "ENG": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "CRO": "🇭🇷", "PAN": "🇵🇦", "GHA": "🇬🇭",
 }
 
+# 🥚 Easter egg: each flag on a country profile links to that nation's
+# football song / chant. YouTube search links so they never rot.
+def _yt(q):
+    from urllib.parse import quote_plus
+    return "https://www.youtube.com/results?search_query=" + quote_plus(q)
+
+TEAM_SONGS = {
+    "ENG": ("🦁 Three Lions — It's Coming Home", _yt("three lions football's coming home")),
+    "SCO": ("🎉 No Scotland, No Party!", _yt("no scotland no party yes sir i can boogie")),
+    "ARG": ("🇦🇷 Muchachos", _yt("muchachos ahora nos volvimos a ilusionar")),
+    "BRA": ("🥁 Brazil Samba", _yt("brazil world cup samba torcida")),
+    "NED": ("🟧 Wij Houden van Oranje", _yt("wij houden van oranje andre hazes")),
+    "USA": ("🦅 Born in the U.S.A.", _yt("born in the usa bruce springsteen")),
+    "GER": ("🇩🇪 54, 74, 90, 2010", _yt("54 74 90 2010 sportfreunde stiller")),
+    "FRA": ("🇫🇷 La Marseillaise", _yt("la marseillaise hymne national")),
+    "MEX": ("🎺 Cielito Lindo", _yt("cielito lindo mexico")),
+    "ESP": ("💃 Y Viva España", _yt("y viva espana")),
+    "JPN": ("⚽ Samurai Blue", _yt("japan samurai blue supporters chant")),
+    "KOR": ("🇰🇷 Be the Reds!", _yt("be the reds korea world cup")),
+}
+
 TEAM_FACTS = {
     "USA": [
         "Hosting WC 2026 on home soil — their biggest football moment since the 1994 tournament they also hosted.",
