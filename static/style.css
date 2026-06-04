@@ -8,22 +8,22 @@
   --bg-card-h:    #172540;
   --border:       rgba(255,255,255,0.07);
   --border-h:     rgba(255,255,255,0.15);
-  --gold:         #f0a500;
-  --gold-light:   #ffd060;
-  --gold-dim:     rgba(240,165,0,0.15);
-  --green:        #00d68f;
-  --green-dim:    rgba(0,214,143,0.12);
-  --red:          #ff4d6d;
-  --red-dim:      rgba(255,77,109,0.12);
-  --blue:         #4d9eff;
-  --text:         #e8edf5;
-  --text-muted:   #7a8ca8;
-  --text-dim:     #4a5568;
-  --radius:       14px;
-  --radius-sm:    8px;
-  --shadow:       0 8px 32px rgba(0,0,0,0.5);
-  --shadow-gold:  0 0 24px rgba(240,165,0,0.25);
-  --transition:   all 0.22s cubic-bezier(0.4,0,0.2,1);
+  --gold:         #e0a32e;
+  --gold-light:   #ecc066;
+  --gold-dim:     rgba(224,163,46,0.12);
+  --green:        #3ba776;
+  --green-dim:    rgba(59,167,118,0.12);
+  --red:          #d65563;
+  --red-dim:      rgba(214,85,99,0.12);
+  --blue:         #5b93d6;
+  --text:         #e6ebf2;
+  --text-muted:   #8593a8;
+  --text-dim:     #56627a;
+  --radius:       10px;
+  --radius-sm:    7px;
+  --shadow:       0 4px 20px rgba(0,0,0,0.35);
+  --shadow-soft:  0 2px 10px rgba(0,0,0,0.25);
+  --transition:   border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
 }
 
 /* ── Base ── */
@@ -46,8 +46,8 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(0,100,255,0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(240,165,0,0.05) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(91,147,214,0.035) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(224,163,46,0.025) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
@@ -109,8 +109,6 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .card:hover {
   background: var(--bg-card-h);
   border-color: var(--border-h) !important;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
 }
 
 .card-header {
@@ -125,9 +123,9 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 }
 
 .card-header.gold {
-  background: linear-gradient(90deg, rgba(240,165,0,0.15), transparent) !important;
+  background: var(--gold-dim) !important;
   color: var(--gold) !important;
-  border-bottom-color: rgba(240,165,0,0.2) !important;
+  border-bottom-color: rgba(224,163,46,0.2) !important;
 }
 
 .card-footer {
@@ -137,7 +135,7 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 
 /* ── Hero ── */
 .hero {
-  background: linear-gradient(135deg, rgba(0,60,150,0.2) 0%, rgba(240,165,0,0.08) 100%);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 2.5rem 2rem;
@@ -149,25 +147,19 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 .hero::after {
   content: '⚽';
   position: absolute;
-  right: 1.5rem;
+  right: 1.75rem;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 7rem;
-  opacity: 0.06;
-  animation: spin 20s linear infinite;
+  font-size: 6rem;
+  opacity: 0.04;
 }
-
-@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
 
 .hero-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(2.5rem, 6vw, 4.5rem);
   line-height: 1;
   letter-spacing: 0.06em;
-  background: linear-gradient(135deg, #fff 30%, var(--gold));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text);
 }
 
 .hero-sub {
@@ -214,7 +206,7 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   text-align: center;
   transition: var(--transition);
 }
-.stat-chip:hover { border-color: var(--gold); box-shadow: var(--shadow-gold); }
+.stat-chip:hover { border-color: var(--border-h); }
 .stat-num {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 2.4rem;
@@ -346,7 +338,7 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   border-radius: var(--radius-sm);
   transition: var(--transition);
 }
-.lb-row:hover { background: var(--bg-card-h); transform: translateX(4px); }
+.lb-row:hover { background: var(--bg-card-h); }
 .lb-row td { padding: 0.75rem 1rem; border: none; vertical-align: middle; }
 .lb-row td:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
 .lb-row td:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
@@ -360,13 +352,13 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
 }
 
 .pts-bar-wrap { width: 100px; background: rgba(255,255,255,0.05); border-radius: 3px; height: 4px; }
-.pts-bar { height: 4px; border-radius: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); transition: width 0.8s ease; }
+.pts-bar { height: 4px; border-radius: 3px; background: var(--gold); transition: width 0.8s ease; }
 
-/* Staggered entrance animation for lb rows */
-.lb-row { animation: slideIn 0.3s ease both; }
+/* Subtle entrance fade for lb rows */
+.lb-row { animation: slideIn 0.25s ease both; }
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(-12px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ── Draw cards ── */
@@ -378,16 +370,16 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   transition: var(--transition);
   animation: fadeUp 0.35s ease both;
 }
-.draw-card:hover { border-color: var(--gold); box-shadow: var(--shadow-gold); }
+.draw-card:hover { border-color: var(--border-h); }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .draw-card-header {
-  background: linear-gradient(90deg, rgba(240,165,0,0.12), transparent);
-  border-bottom: 1px solid rgba(240,165,0,0.15);
+  background: var(--gold-dim);
+  border-bottom: 1px solid rgba(224,163,46,0.15);
   padding: 0.7rem 1rem;
   display: flex;
   align-items: center;
@@ -422,7 +414,7 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   transition: var(--transition);
   animation: fadeUp 0.3s ease both;
 }
-.participant-card:hover { border-color: var(--border-h); transform: translateY(-2px); box-shadow: var(--shadow); }
+.participant-card:hover { border-color: var(--border-h); }
 
 .p-name { font-weight: 700; font-size: 1rem; }
 .p-entries { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
@@ -436,7 +428,7 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   padding: 1.5rem;
   transition: var(--transition);
 }
-.prize-card:hover { border-color: var(--gold); box-shadow: var(--shadow-gold); }
+.prize-card:hover { border-color: var(--border-h); }
 .prize-card.paid { border-color: var(--green); background: linear-gradient(160deg, var(--green-dim) 0%, var(--bg-card) 50%); }
 .prize-amount {
   font-family: 'Bebas Neue', sans-serif;
@@ -471,11 +463,11 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
   letter-spacing: 0.02em;
 }
 .btn-gold {
-  background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  color: #000 !important;
+  background: var(--gold);
+  color: #1a1206 !important;
   border: none;
 }
-.btn-gold:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-gold); }
+.btn-gold:hover { background: var(--gold-light); }
 
 .btn-success { background: var(--green) !important; border-color: var(--green) !important; color: #000 !important; }
 .btn-success:hover { filter: brightness(1.1); }
@@ -656,13 +648,13 @@ footer {
 
 .flip-front {
   background: var(--bg-card);
-  border: 2px solid var(--gold);
-  box-shadow: 0 0 40px rgba(240,165,0,0.15), var(--shadow);
+  border: 1px solid var(--gold);
+  box-shadow: var(--shadow);
 }
 .flip-back {
-  background: linear-gradient(135deg, rgba(0,50,120,0.4), rgba(240,165,0,0.12));
-  border: 2px solid var(--green);
-  box-shadow: 0 0 40px rgba(0,214,143,0.15), var(--shadow);
+  background: var(--bg-card-h);
+  border: 1px solid var(--green);
+  box-shadow: var(--shadow);
   transform: rotateY(180deg);
   text-align: center;
   gap: 0.5rem;
@@ -671,13 +663,13 @@ footer {
 /* Front: mystery ball */
 .mystery-ball {
   font-size: 4rem;
-  animation: mysteryPulse 1.2s ease-in-out infinite;
+  animation: mysteryPulse 2.4s ease-in-out infinite;
   line-height: 1;
   margin-bottom: 0.5rem;
 }
 @keyframes mysteryPulse {
-  0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 8px rgba(240,165,0,0.4)); }
-  50%       { transform: scale(1.12) rotate(15deg); filter: drop-shadow(0 0 20px rgba(240,165,0,0.8)); }
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50%       { transform: scale(1.05); opacity: 1; }
 }
 .mystery-text {
   font-family: 'Bebas Neue', sans-serif;
@@ -743,8 +735,7 @@ footer {
 }
 .reveal-action:hover, .reveal-action:focus {
   background: var(--gold);
-  color: #000;
-  box-shadow: var(--shadow-gold);
+  color: #1a1206;
   outline: none;
 }
 .reveal-action:disabled {
@@ -784,10 +775,7 @@ footer {
 .reveal-done-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 3.5rem;
-  background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--gold);
   line-height: 1;
 }
 
@@ -872,7 +860,7 @@ footer {
   overflow: hidden;
   transition: var(--transition);
 }
-.bracket-matchup:hover { border-color: var(--border-h); transform: scale(1.02); }
+.bracket-matchup:hover { border-color: var(--border-h); }
 .bracket-matchup.played { border-left: 3px solid var(--green); }
 .bracket-matchup.tbd { opacity: 0.4; }
 .bracket-team {
