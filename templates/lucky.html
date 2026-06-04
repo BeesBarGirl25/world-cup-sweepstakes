@@ -28,5 +28,37 @@
     This prediction is powered by advanced AI (Math.random). Past performance is not indicative of future results.
     Not financial advice. Do not bet your house on this.
   </div>
+
+  <!-- The oracle's parting gift: a hint at the hidden words, for those who made it this far -->
+  <div id="oracle-whisper" style="margin-top:2.5rem;cursor:pointer;font-size:.72rem;color:var(--text-dim);letter-spacing:.05em">
+    🔮 <em>the oracle leans in and whispers…</em>
+  </div>
+  <div id="oracle-secrets" style="display:none;max-width:440px;margin:.9rem auto 0;font-size:.78rem;color:var(--text-muted);line-height:1.7">
+    <div style="color:var(--gold);font-family:'Bebas Neue',sans-serif;letter-spacing:.12em;margin-bottom:.4rem">SECRET WORDS</div>
+    <div>“The ground remembers old chants. Type them anywhere…”</div>
+    <div style="margin-top:.5rem">
+      <code>GOAL</code> · <code>OLE</code> · <code>VAR</code> · <code>GOAT</code> ·
+      <code>PENALTY</code> · <code>HATTRICK</code> · <code>OFFSIDE</code> ·
+      <code>REDCARD</code> · <code>WINNER</code> · <code>FULLTIME</code> · <code>COMINGHOME</code>
+    </div>
+    <div style="margin-top:.9rem;color:var(--text-dim)">…and two games for the curious:</div>
+    <div style="margin-top:.35rem">
+      <a href="#" onclick="keepyUppy();return false" style="color:var(--gold);text-decoration:none">⚽ keepy-uppy</a>
+      <span style="color:var(--text-dim)">(type <code>KEEPY</code>)</span>
+      &nbsp;·&nbsp;
+      <a href="#" onclick="penaltyGame();return false" style="color:var(--gold);text-decoration:none">🥅 penalty shootout</a>
+      <span style="color:var(--text-dim)">(type <code>SHOOT</code>)</span>
+    </div>
+    <div style="margin-top:.9rem;color:var(--text-dim);font-style:italic">
+      Other whispers: the Konami code… clicking the trophy five times… double-clicking the footer… and standing perfectly still.
+    </div>
+  </div>
 </div>
+
+<script>
+  document.getElementById('oracle-whisper').addEventListener('click', () => {
+    const s = document.getElementById('oracle-secrets');
+    s.style.display = s.style.display === 'none' ? 'block' : 'none';
+  });
+</script>
 {% endblock %}

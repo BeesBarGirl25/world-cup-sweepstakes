@@ -455,6 +455,10 @@ PARTICIPANTS = [
     {"name": "Wasiq Rehman",       "entry_fee_paid": 20.00},  # 4 entries
     {"name": "Liam Bowmer",        "entry_fee_paid": 15.00},  # 3 entries
     {"name": "William Carter",     "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Stephen Ward",       "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Nic Harrison",       "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Ben Musgrave",       "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Stavros Katsoris",   "entry_fee_paid": 20.00},  # 4 entries
 ]
 
 FUN_CATEGORIES = [

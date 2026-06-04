@@ -73,7 +73,7 @@
 </div>
 
 <!-- Easter egg #2: hidden oracle link in footer -->
-<footer class="text-center mt-auto">
+<footer class="text-center mt-auto" ondblclick="fireworks(event)" title="(double-click me 🎆)">
   <div class="container">
     Quantexa World Cup 2026 Charity Sweepstake &mdash;
     <span class="text-muted" style="cursor:pointer" title="🎉" onclick="launchConfettiGlobal()">Tournament starts 11 Jun 2026</span>
@@ -183,6 +183,18 @@ document.addEventListener('keypress', e => {
   else if (eggBuf.endsWith('GOAT')) { eggBuf = ''; emojiRain('🐐'); showFloatBanner('🐐 GOAT 🐐', 'var(--gold)'); }
   else if (eggBuf.endsWith('OLE')) { eggBuf = ''; showFloatBanner('OLÉ, OLÉ, OLÉ, OLÉ! ⚽', 'var(--gold)'); launchConfettiGlobal(); }
   else if (eggBuf.endsWith('VAR')) { eggBuf = ''; showVAR(); }
+  // ── Easter egg #7: more typed-word triggers ───────────────────────────────
+  else if (eggBuf.endsWith('HATTRICK')) { eggBuf = ''; hatTrick(); }
+  else if (eggBuf.endsWith('REDCARD')) { eggBuf = ''; showCard('#ff4d6d', '🟥', 'RED CARD!'); }
+  else if (eggBuf.endsWith('OFFSIDE')) { eggBuf = ''; showFloatBanner('🚩 OFFSIDE!', 'var(--red)'); }
+  else if (eggBuf.endsWith('WINNER') || eggBuf.endsWith('CHAMPION')) { eggBuf = ''; emojiRain('🏆', 30); showFloatBanner('🏆 CHAMPIONS 🏆', 'var(--gold)'); launchConfettiGlobal(); }
+  else if (eggBuf.endsWith('FULLTIME')) { eggBuf = ''; showFloatBanner('📣 FULL TIME!', '#fff'); }
+  else if (eggBuf.endsWith('COMINGHOME')) { eggBuf = ''; showFloatBanner("IT'S COMING HOME ⚽", 'var(--gold)'); emojiRain('🏴󠁧󠁢󠁥󠁮󠁧󠁿', 20); }
+  // The man of mystery himself (see egg #1 — Martin paid £10.39)
+  else if (eggBuf.endsWith('DURCHOV')) { eggBuf = ''; showFloatBanner('🕵️ £10.39 — MAN OF MYSTERY', 'var(--gold)'); emojiRain('💷', 20); }
+  // ── Easter egg #8: interactive mini-games ─────────────────────────────────
+  else if (eggBuf.endsWith('KEEPY')) { eggBuf = ''; keepyUppy(); }
+  else if (eggBuf.endsWith('SHOOT')) { eggBuf = ''; penaltyGame(); }
 });
 // Click any big stat number → make it rain 💷
 document.addEventListener('click', e => {
@@ -246,8 +258,237 @@ function showVAR() {
   setTimeout(() => overlay.remove(), 3000);
 }
 
+function hatTrick() {
+  ['1st', '2nd', '3rd'].forEach((label, i) => {
+    setTimeout(() => { emojiRain('⚽', 10); showFloatBanner('⚽ GOAL ' + label + '!', 'var(--green)'); }, i * 750);
+  });
+  setTimeout(() => { showFloatBanner('🎩 HAT-TRICK! ⚽⚽⚽', 'var(--gold)'); launchConfettiGlobal(); }, 2400);
+}
+function showCard(color, emoji, text) {
+  const card = document.createElement('div');
+  Object.assign(card.style, {
+    position:'fixed', top:'50%', left:'50%',
+    transform:'translate(-50%,-50%) rotate(-12deg) scale(0)',
+    width:'120px', height:'170px', background:color, borderRadius:'10px',
+    boxShadow:'0 10px 40px rgba(0,0,0,.6)', zIndex:'9998', pointerEvents:'none',
+    display:'flex', alignItems:'center', justifyContent:'center', fontSize:'3rem',
+    transition:'transform .35s cubic-bezier(.34,1.56,.64,1), opacity .4s ease', opacity:'0'
+  });
+  card.textContent = emoji;
+  document.body.appendChild(card);
+  requestAnimationFrame(() => { card.style.transform='translate(-50%,-50%) rotate(-12deg) scale(1)'; card.style.opacity='1'; });
+  setTimeout(() => showFloatBanner(text, color), 400);
+  setTimeout(() => { card.style.opacity='0'; }, 1600);
+  setTimeout(() => card.remove(), 2100);
+}
+
 // ── Easter egg #6: Martin Durchov tooltip ───────────────────────────────────
 // Applied via data attributes in participant cards (see participants.html)
+
+// ── Shared game-overlay builder ──────────────────────────────────────────────
+function makeGameOverlay() {
+  const ov = document.createElement('div');
+  Object.assign(ov.style, {
+    position:'fixed', inset:'0', zIndex:'10000', background:'rgba(5,9,18,.92)',
+    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+    fontFamily:"'Inter',sans-serif", userSelect:'none', overflow:'hidden'
+  });
+  const close = document.createElement('button');
+  close.innerHTML = '✕';
+  Object.assign(close.style, {
+    position:'absolute', top:'18px', right:'22px', fontSize:'1.6rem', lineHeight:'1',
+    background:'none', border:'none', color:'var(--text-muted,#9aa)', cursor:'pointer', zIndex:'2'
+  });
+  close.onclick = () => { ov._stop = true; ov.remove(); };
+  ov.appendChild(close);
+  document.addEventListener('keydown', function esc(e){
+    if (e.key === 'Escape') { ov._stop = true; ov.remove(); document.removeEventListener('keydown', esc); }
+  });
+  document.body.appendChild(ov);
+  return ov;
+}
+
+// ── Mini-game: interactive keepy-uppy ────────────────────────────────────────
+function keepyUppy() {
+  const ov = makeGameOverlay();
+  const HI = +(localStorage.getItem('keepyHi') || 0);
+  const title = document.createElement('div');
+  title.style.cssText = "font-family:'Bebas Neue',sans-serif;font-size:clamp(1.4rem,4vw,2.2rem);color:#fff;letter-spacing:.08em;margin-bottom:4px";
+  title.textContent = '⚽ KEEPY-UPPY';
+  const hud = document.createElement('div');
+  hud.style.cssText = "color:var(--gold,#f0a500);font-weight:700;margin-bottom:10px";
+  const tip = document.createElement('div');
+  tip.style.cssText = "color:var(--text-muted,#9aa);font-size:.85rem;margin-bottom:14px";
+  tip.textContent = 'Click / tap the ball — don\'t let it drop! (Esc to quit)';
+  const arena = document.createElement('div');
+  arena.style.cssText = "position:relative;width:min(92vw,420px);height:min(64vh,520px);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden";
+  const floor = document.createElement('div');
+  floor.style.cssText = "position:absolute;left:0;right:0;bottom:0;height:14px;background:linear-gradient(var(--green,#00d68f),transparent)";
+  const ball = document.createElement('div');
+  ball.textContent = '⚽';
+  ball.style.cssText = "position:absolute;font-size:2.6rem;cursor:pointer;will-change:transform;touch-action:none";
+  arena.append(floor, ball);
+  ov.append(title, hud, tip, arena);
+
+  const W = arena.clientWidth, H = arena.clientHeight, R = 22;
+  let x = W/2 - R, y = 60, vx = 1.4, vy = 0, score = 0, started = false;
+  const G = 0.45, BOUNCE_WALL = -0.9;
+  function render(){ ball.style.transform = `translate(${x}px,${y}px)`; }
+  render();
+  hud.textContent = `Score 0   ·   Best ${HI}`;
+
+  function kick(e){
+    e.preventDefault();
+    started = true;
+    vy = -11 - Math.random()*2;
+    const rect = ball.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX);
+    vx += ((rect.left + R) - cx) * 0.06;   // push away from where you tapped
+    vx = Math.max(-7, Math.min(7, vx));
+    score++;
+    hud.textContent = `Score ${score}   ·   Best ${Math.max(HI, score)}`;
+    ball.animate([{transform:`translate(${x}px,${y}px) scale(.8)`},{transform:`translate(${x}px,${y}px) scale(1)`}],{duration:120});
+  }
+  ball.addEventListener('mousedown', kick);
+  ball.addEventListener('touchstart', kick, {passive:false});
+
+  function loop(){
+    if (ov._stop) return;
+    if (started) {
+      vy += G; x += vx; y += vy;
+      if (x < 0){ x = 0; vx *= BOUNCE_WALL; }
+      if (x > W - 2*R){ x = W - 2*R; vx *= BOUNCE_WALL; }
+      if (y < 0){ y = 0; vy *= -0.5; }
+      if (y > H - 2*R){            // hit the floor → game over
+        const best = Math.max(HI, score);
+        localStorage.setItem('keepyHi', best);
+        gameOver(ov, `⚽ ${score} keepy-uppies!`, score >= HI && score > 0 ? '🏆 New best!' : `Best: ${best}`, keepyUppy);
+        return;
+      }
+      render();
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+
+// ── Mini-game: penalty shootout (best of 5) ──────────────────────────────────
+function penaltyGame() {
+  const ov = makeGameOverlay();
+  let shot = 0, scored = 0, saved = 0;
+  const title = document.createElement('div');
+  title.style.cssText = "font-family:'Bebas Neue',sans-serif;font-size:clamp(1.4rem,4vw,2.2rem);color:#fff;letter-spacing:.08em;margin-bottom:4px";
+  title.textContent = '🥅 PENALTY SHOOTOUT';
+  const hud = document.createElement('div');
+  hud.style.cssText = "color:var(--gold,#f0a500);font-weight:700;margin-bottom:14px";
+  const scene = document.createElement('div');
+  scene.style.cssText = "position:relative;width:min(92vw,420px);height:200px;margin-bottom:18px";
+  scene.innerHTML = `<div style="position:absolute;left:50%;top:0;transform:translateX(-50%);font-size:5rem">🥅</div>
+    <div id="pgKeeper" style="position:absolute;top:34px;left:50%;transform:translateX(-50%);font-size:2.6rem;transition:all .35s cubic-bezier(.4,0,.2,1)">🧤</div>
+    <div id="pgBall" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:2.4rem;transition:all .45s cubic-bezier(.4,0,.2,1)">⚽</div>`;
+  const controls = document.createElement('div');
+  controls.style.cssText = "display:flex;gap:12px";
+  const tip = document.createElement('div');
+  tip.style.cssText = "color:var(--text-muted,#9aa);font-size:.85rem;margin-top:12px";
+  tip.textContent = 'Pick a corner — beat the keeper! (Esc to quit)';
+  ov.append(title, hud, scene, controls, tip);
+
+  const POS = { Left:'18%', Centre:'50%', Right:'82%' };
+  function updateHud(){ hud.textContent = `Shot ${Math.min(shot+1,5)}/5   ·   ⚽ ${scored}  🧤 ${saved}`; }
+  updateHud();
+
+  let busy = false;
+  ['Left','Centre','Right'].forEach(dir => {
+    const b = document.createElement('button');
+    b.textContent = dir;
+    b.style.cssText = "font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.05em;padding:.5rem 1.1rem;border-radius:10px;border:1px solid rgba(240,165,0,.5);background:rgba(240,165,0,.12);color:var(--gold,#f0a500);cursor:pointer";
+    b.onclick = () => {
+      if (busy || ov._stop) return;
+      busy = true;
+      const keeperDir = ['Left','Centre','Right'][Math.floor(Math.random()*3)];
+      const goal = keeperDir !== dir;
+      const ball = scene.querySelector('#pgBall'), keeper = scene.querySelector('#pgKeeper');
+      ball.style.left = POS[dir]; ball.style.bottom = '120px';
+      keeper.style.left = POS[keeperDir];
+      setTimeout(() => {
+        shot++;
+        if (goal){ scored++; showFloatBanner('GOAL! ⚽', 'var(--green,#00d68f)'); }
+        else { saved++; showFloatBanner('SAVED! 🧤', 'var(--red,#ff4d6d)'); }
+        updateHud();
+        setTimeout(() => {
+          ball.style.transition='none'; ball.style.left='50%'; ball.style.bottom='8px';
+          requestAnimationFrame(()=> ball.style.transition='all .45s cubic-bezier(.4,0,.2,1)');
+          keeper.style.left='50%';
+          busy = false;
+          if (shot >= 5){
+            const msg = scored > saved ? '🏆 You win the shootout!' : scored === saved ? '🤝 It\'s a draw!' : '😬 Keeper\'s hero!';
+            gameOver(ov, `Final: ⚽ ${scored} – 🧤 ${saved}`, msg, penaltyGame);
+          }
+        }, 700);
+      }, 450);
+    };
+    controls.appendChild(b);
+  });
+}
+
+// Shared game-over panel with replay
+function gameOver(ov, line1, line2, replayFn) {
+  ov._stop = true;
+  [...ov.children].forEach(c => { if (c.tagName !== 'BUTTON') c.remove(); });
+  const panel = document.createElement('div');
+  panel.style.cssText = "text-align:center";
+  panel.innerHTML = `<div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,7vw,3.4rem);color:var(--gold,#f0a500)">${line1}</div>
+    <div style="color:#fff;font-size:1.1rem;margin:6px 0 18px">${line2}</div>`;
+  const again = document.createElement('button');
+  again.textContent = '↻ Play again';
+  again.style.cssText = "font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.05em;padding:.55rem 1.4rem;border-radius:10px;border:1px solid rgba(240,165,0,.5);background:rgba(240,165,0,.15);color:var(--gold,#f0a500);cursor:pointer";
+  again.onclick = () => { ov.remove(); replayFn(); };
+  panel.appendChild(again);
+  ov.appendChild(panel);
+  if (line1.includes('🏆') || line2.includes('win') || line2.includes('best')) launchConfettiGlobal();
+}
+
+// ── Easter egg #9: idle ball rolls across the screen ─────────────────────────
+let idleTimer;
+function resetIdle(){
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(rollBall, 30000);
+}
+function rollBall(){
+  const ball = document.createElement('div');
+  ball.textContent = '⚽';
+  ball.style.cssText = `position:fixed;bottom:12px;left:-60px;font-size:2.2rem;z-index:9997;pointer-events:none;
+    animation:rollAcross 6s linear forwards`;
+  document.body.appendChild(ball);
+  ball.addEventListener('animationend', () => ball.remove());
+  resetIdle();
+}
+['mousemove','keydown','click','touchstart','scroll'].forEach(ev =>
+  document.addEventListener(ev, resetIdle, {passive:true}));
+resetIdle();
+
+// ── Easter egg #10: double-click footer → fireworks ──────────────────────────
+function fireworks(e){
+  const burst = (cx, cy) => {
+    const colours = ['#f0a500','#ffd060','#00d68f','#4d9eff','#ff4d6d','#fff'];
+    for (let i=0;i<26;i++){
+      const p = document.createElement('div');
+      const ang = (i/26)*Math.PI*2, dist = 60 + Math.random()*90;
+      p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:7px;height:7px;border-radius:50%;
+        background:${colours[i%colours.length]};z-index:9999;pointer-events:none`;
+      document.body.appendChild(p);
+      p.animate([
+        {transform:'translate(0,0) scale(1)', opacity:1},
+        {transform:`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist}px) scale(.3)`, opacity:0}
+      ], {duration:900+Math.random()*400, easing:'cubic-bezier(.2,.6,.3,1)'})
+       .onfinish = () => p.remove();
+    }
+  };
+  const x = e ? e.clientX : window.innerWidth/2, y = e ? e.clientY : window.innerHeight/2;
+  burst(x, y);
+  setTimeout(() => burst(x - 80 + Math.random()*160, y - 60 - Math.random()*40), 250);
+  setTimeout(() => burst(x - 80 + Math.random()*160, y - 40 - Math.random()*40), 500);
+}
 
 // ── Shared confetti launcher ─────────────────────────────────────────────────
 function launchConfettiGlobal() {
