@@ -417,18 +417,26 @@ TEAMS = [
     {"name": "Ghana", "code": "GHA", "group_name": "L", "confederation": "CAF"},
 ]
 
-# Quantexa sweepstake participants — processed from contributions CSV
-# entry_fee_paid = rounded total; entries = fee / 5
+# Quantexa sweepstake participants — processed from the contributions CSV.
+# entry_fee_paid = summed total across all of a person's contributions.
+# entries = max(1, round(fee / 5)) — see Participant.entries in models.py.
+# Duplicate contributors are summed (e.g. Molly Atkinson £15+£5=£20,
+# Martin Durchov £0.78+£9.61=£10.39). Admin-added players store fee = entries*5.
 PARTICIPANTS = [
     {"name": "Alex Wood",          "entry_fee_paid": 25.00},  # 5 entries
     {"name": "Molly Atkinson",     "entry_fee_paid": 20.00},  # 4 entries
     {"name": "Harry Reid",         "entry_fee_paid": 20.00},  # 4 entries
     {"name": "Tristan Rowick",     "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Wasiq Rehman",       "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Stavros Katsoris",   "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Will Hicks",         "entry_fee_paid": 19.42},  # 4 entries
     {"name": "Mahamed Ali",        "entry_fee_paid": 15.00},  # 3 entries
     {"name": "John Keightley",     "entry_fee_paid": 15.00},  # 3 entries
     {"name": "Gregory Jones",      "entry_fee_paid": 15.00},  # 3 entries
     {"name": "Alex Cowan",         "entry_fee_paid": 15.00},  # 3 entries
-    {"name": "Martin Durchov",     "entry_fee_paid": 10.00},  # 2 entries (rounded from £10.39)
+    {"name": "Liam Bowmer",        "entry_fee_paid": 15.00},  # 3 entries
+    {"name": "Dan Pryer",          "entry_fee_paid": 15.00},  # 3 entries
+    {"name": "Martin Durchov",     "entry_fee_paid": 10.39},  # 2 entries (£0.78 + £9.61)
     {"name": "Paris Dean-Vigrass", "entry_fee_paid": 10.00},  # 2 entries
     {"name": "Shyam Bhatt",        "entry_fee_paid": 10.00},  # 2 entries
     {"name": "Ed Hodgskiss",       "entry_fee_paid": 10.00},  # 2 entries
@@ -440,6 +448,13 @@ PARTICIPANTS = [
     {"name": "Martyn Laidler",     "entry_fee_paid": 10.00},  # 2 entries
     {"name": "Ian Clarke",         "entry_fee_paid": 10.00},  # 2 entries
     {"name": "Manny Lawal",        "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Stephen Ward",       "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Ben Musgrave",       "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Will Reade",         "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Renos Ballas",       "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Danny Gold",         "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Sam Nejad",          "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Jak Maloret",        "entry_fee_paid": 10.00},  # 2 entries
     {"name": "Andrew Jensen",      "entry_fee_paid":  5.00},  # 1 entry
     {"name": "Mark Cossey",        "entry_fee_paid":  5.00},  # 1 entry
     {"name": "Sam Hall",           "entry_fee_paid":  5.00},  # 1 entry
@@ -452,13 +467,12 @@ PARTICIPANTS = [
     {"name": "Tom Sheehy",         "entry_fee_paid":  5.00},  # 1 entry
     {"name": "James Bruce",        "entry_fee_paid":  5.00},  # 1 entry
     {"name": "Ben Willis",         "entry_fee_paid":  5.00},  # 1 entry
-    {"name": "Wasiq Rehman",       "entry_fee_paid": 20.00},  # 4 entries
-    {"name": "Liam Bowmer",        "entry_fee_paid": 15.00},  # 3 entries
     {"name": "William Carter",     "entry_fee_paid":  5.00},  # 1 entry
-    {"name": "Stephen Ward",       "entry_fee_paid": 10.00},  # 2 entries
     {"name": "Nic Harrison",       "entry_fee_paid":  5.00},  # 1 entry
-    {"name": "Ben Musgrave",       "entry_fee_paid": 10.00},  # 2 entries
-    {"name": "Stavros Katsoris",   "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Nathan Grand",       "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Daniela Casilli",    "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Joe Watts",          "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Sian Ayres",         "entry_fee_paid":  5.00},  # 1 entry
 ]
 
 FUN_CATEGORIES = [

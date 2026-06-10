@@ -19,6 +19,10 @@
           <button class="btn btn-success btn-sm"><i class="bi bi-eye me-1"></i>Publish Draw</button>
         </form>
         {% endif %}
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('export_draw') }}"
+           title="Download a CSV backup of who got which team">
+          <i class="bi bi-download me-1"></i>Backup CSV
+        </a>
         <form method="POST" action="{{ url_for('reset_draw') }}"
               onsubmit="return confirm('Reset? All assignments cleared.')">
           <button class="btn btn-outline-danger btn-sm"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
@@ -92,14 +96,28 @@
 <div class="row g-4">
   <div class="col-lg-5">
     <div class="card">
-      <div class="card-header gold"><i class="bi bi-people me-1"></i>{{ participants | length }} Players</div>
+      <div class="card-header gold"><i class="bi bi-people me-1"></i>{{ participants | length }} Players · {{ total_entries }} Entries</div>
       <div class="p-3">
         {% for p in participants | sort(attribute='name') %}
-        <div class="d-flex justify-content-between py-1" style="border-bottom:1px solid var(--border);font-size:.9rem">
-          <span>{{ p.name }}</span>
-          <span style="color:var(--text-muted);font-size:.75rem">{{ p.entries }} entr{{ 'y' if p.entries == 1 else 'ies' }}</span>
+        <div class="d-flex align-items-center justify-content-between py-1 gap-2" style="border-bottom:1px solid var(--border);font-size:.9rem">
+          <span class="text-truncate">{{ p.name }}</span>
+          <span class="d-flex align-items-center gap-2 flex-shrink-0">
+            <span style="color:var(--text-muted);font-size:.75rem">{{ p.entries }} entr{{ 'y' if p.entries == 1 else 'ies' }}</span>
+            <form method="POST" action="{{ url_for('delete_participant', pid=p.id) }}"
+                  onsubmit="return confirm('Remove {{ p.name }} from the draw?')">
+              <button class="btn btn-sm p-0 px-1" style="line-height:1;color:var(--text-dim);border:none;background:none"
+                      title="Remove {{ p.name }}">&times;</button>
+            </form>
+          </span>
         </div>
         {% endfor %}
+        <form method="POST" action="{{ url_for('add_participant') }}" class="d-flex gap-2 mt-3">
+          <input type="text" name="name" class="form-control form-control-sm" placeholder="Add a player…" required>
+          <input type="number" name="entries" class="form-control form-control-sm" value="1" min="1" max="50"
+                 style="width:72px" title="Number of entries" aria-label="Entries">
+          <button class="btn btn-gold btn-sm flex-shrink-0"><i class="bi bi-plus-lg"></i></button>
+        </form>
+        <div style="color:var(--text-dim);font-size:.72rem;margin-top:.4rem">Each entry = £5. Adding an existing name updates their entries.</div>
       </div>
     </div>
   </div>
@@ -109,13 +127,23 @@
       <div class="p-4">
         <div class="row g-3 text-center mb-3">
           <div class="col-4"><div class="stat-chip"><div class="stat-num">{{ participants | length }}</div><div class="stat-label">Players</div></div></div>
-          <div class="col-4"><div class="stat-chip"><div class="stat-num text-warning">65</div><div class="stat-label">Entries</div></div></div>
-          <div class="col-4"><div class="stat-chip"><div class="stat-num" style="color:var(--green)">48</div><div class="stat-label">Teams</div></div></div>
+          <div class="col-4"><div class="stat-chip"><div class="stat-num text-warning">{{ total_entries }}</div><div class="stat-label">Entries</div></div></div>
+          <div class="col-4"><div class="stat-chip"><div class="stat-num" style="color:var(--green)">{{ team_count }}</div><div class="stat-label">Teams</div></div></div>
         </div>
-        <p style="color:var(--text-muted);font-size:.88rem">Each £5 = 1 entry, weighted into the draw. 17 teams will be shared — all entries guaranteed a team.</p>
+        <p style="color:var(--text-muted);font-size:.88rem">Each £5 = 1 entry, weighted into the draw.
+          {% if shared_count > 0 %}{{ shared_count }} team{{ 's' if shared_count != 1 }} will be shared — all entries guaranteed a team.{% endif %}</p>
         <form method="POST" action="{{ url_for('run_draw') }}">
           <button class="btn btn-gold w-100 py-2"><i class="bi bi-play-fill me-1"></i>Run the Draw</button>
         </form>
+        <hr style="border-color:var(--border);margin:1.2rem 0 1rem">
+        <div class="section-title" style="margin-bottom:.6rem"><i class="bi bi-arrow-counterclockwise"></i>Restore from backup</div>
+        <form method="POST" action="{{ url_for('import_draw') }}" enctype="multipart/form-data"
+              class="d-flex gap-2 align-items-center"
+              onsubmit="return confirm('Import this backup CSV? It will replace any current assignments.')">
+          <input type="file" name="file" accept=".csv" class="form-control form-control-sm" required>
+          <button class="btn btn-outline-secondary btn-sm flex-shrink-0"><i class="bi bi-upload me-1"></i>Import</button>
+        </form>
+        <div style="color:var(--text-dim);font-size:.72rem;margin-top:.4rem">Repopulates the draw from a previously downloaded Backup CSV.</div>
       </div>
     </div>
   </div>
@@ -142,15 +170,16 @@
   <div class="flip-scene" id="flipScene" onclick="handleCardClick()">
     <div class="flip-card" id="flipCard">
       <div class="flip-front">
-        <div class="mystery-ball">⚽</div>
-        <div class="mystery-text">???</div>
+        <div class="mystery-ball" style="font-size:2.6rem;margin-bottom:.6rem">⚽</div>
+        <div class="reveal-team-code" style="margin-bottom:.6rem">— next up —</div>
+        <div class="reveal-team-name" id="frontParticipant"></div>
+        <div class="mystery-text" style="font-size:.85rem;letter-spacing:.18em;margin-top:1.2rem;opacity:.45">CLICK TO REVEAL TEAM</div>
       </div>
       <div class="flip-back" id="flipBack">
-        <div id="backFlag" style="font-size:4.5rem;line-height:1;margin-bottom:.4rem"></div>
+        <div id="backParticipant" style="font-size:1rem;font-weight:600;color:var(--green)"></div>
+        <div id="backFlag" style="font-size:4.5rem;line-height:1;margin:.2rem 0 .3rem"></div>
         <div class="reveal-team-code" id="backCode"></div>
         <div class="reveal-team-name" id="backTeam"></div>
-        <div class="reveal-divider" id="backDivider">— goes to —</div>
-        <div class="reveal-participant-name" id="backParticipant"></div>
         <div class="reveal-fact" id="backFact"></div>
       </div>
     </div>
@@ -203,15 +232,16 @@ function closeReveal() {
 function loadCard(i) {
   flipCard.classList.remove('flipped');
   flipped = false;
-  document.getElementById('backDivider').classList.remove('show');
-  document.getElementById('backParticipant').classList.remove('show');
   document.getElementById('backFact').classList.remove('show');
   if (i >= TOTAL) { showDone(); return; }
   const a = ASSIGNMENTS[i];
+  // Front: whose draw it is
+  document.getElementById('frontParticipant').textContent = a.participant;
+  // Back: the team they got + fun fact
+  document.getElementById('backParticipant').textContent = `${a.participant} gets…`;
   document.getElementById('backFlag').textContent = a.flag || '🏳️';
   document.getElementById('backCode').textContent = `${a.code} · Group ${a.group} · ${a.confederation}`;
   document.getElementById('backTeam').textContent  = a.team;
-  document.getElementById('backParticipant').textContent = a.participant;
   document.getElementById('backFact').textContent  = a.fact || '';
   counter.textContent = `${i + 1} of ${TOTAL}`;
   progressFill.style.width = `${(i / TOTAL) * 100}%`;
@@ -222,9 +252,7 @@ function flipNow() {
   clearTimeout(autoTimer);
   flipCard.classList.add('flipped');
   flipped = true;
-  setTimeout(() => document.getElementById('backDivider').classList.add('show'), 400);
-  setTimeout(() => document.getElementById('backParticipant').classList.add('show'), 700);
-  setTimeout(() => document.getElementById('backFact').classList.add('show'), 1100);
+  setTimeout(() => document.getElementById('backFact').classList.add('show'), 500);
   addChip(ASSIGNMENTS[idx]);
   idx++;
   if (!isManual) autoTimer = setTimeout(() => { loadCard(idx); if (!isManual) scheduleFlip(); }, autoDelay + 1400);
@@ -252,7 +280,7 @@ function showDone() {
 function addChip(a) {
   const chip = document.createElement('span');
   chip.className = 'revealed-chip';
-  chip.textContent = `${a.flag || ''} ${a.code} → ${a.participant.split(' ')[0]}`;
+  chip.textContent = `${a.participant.split(' ')[0]} → ${a.flag || ''} ${a.code}`;
   strip.appendChild(chip);
 }
 

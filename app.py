@@ -1,7 +1,9 @@
 import os
+import csv
+import io
 import random
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response
 from models import db, Team, Participant, Assignment, Match, Prize, FunCategory, FunWinner, AppSettings
 from seed_data import TEAMS, PARTICIPANTS, FUN_CATEGORIES, FLAG_EMOJIS, TEAM_FACTS, TEAM_SONGS
 
@@ -461,6 +463,8 @@ def draw():
             })
         random.shuffle(assignments_data)
 
+    total_entries = sum(p.entries for p in participants_list)
+    team_count = Team.query.count()
     return render_template(
         "draw.html",
         participants=participants_list,
@@ -469,6 +473,9 @@ def draw():
         draw_done=draw_done,
         draw_public=draw_pub,
         is_admin=admin,
+        total_entries=total_entries,
+        team_count=team_count,
+        shared_count=max(0, total_entries - team_count),
     )
 
 
@@ -511,6 +518,136 @@ def reset_draw():
     Assignment.query.delete()
     db.session.commit()
     flash("Draw reset.", "info")
+    return redirect(url_for("draw"))
+
+
+# ── Participant management (admin) ─────────────────────────────────────────────
+
+@app.route("/draw/participant/add", methods=["POST"])
+def add_participant():
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("draw"))
+    name = (request.form.get("name") or "").strip()
+    try:
+        entries = int(request.form.get("entries", 1))
+    except (TypeError, ValueError):
+        entries = 1
+    entries = max(1, min(entries, 50))
+    if not name:
+        flash("Enter a name.", "warning")
+        return redirect(url_for("draw"))
+    existing = Participant.query.filter(db.func.lower(Participant.name) == name.lower()).first()
+    if existing:
+        # Top up an existing player's entries rather than erroring/duplicating.
+        existing.entry_fee_paid = entries * 5.0
+        db.session.commit()
+        flash(f"Updated {existing.name} to {entries} entr{'y' if entries == 1 else 'ies'}.", "success")
+        return redirect(url_for("draw"))
+    # entries stored as fee (£5 = 1 entry) to match how Participant.entries works.
+    db.session.add(Participant(name=name, entry_fee_paid=entries * 5.0))
+    db.session.commit()
+    flash(f"Added {name} with {entries} entr{'y' if entries == 1 else 'ies'}.", "success")
+    return redirect(url_for("draw"))
+
+
+@app.route("/draw/participant/<int:pid>/delete", methods=["POST"])
+def delete_participant(pid):
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("draw"))
+    p = Participant.query.get_or_404(pid)
+    name = p.name
+    db.session.delete(p)  # cascades to their assignments
+    db.session.commit()
+    flash(f"Removed {name}.", "info")
+    return redirect(url_for("draw"))
+
+
+# ── Draw backup: export / import ───────────────────────────────────────────────
+
+@app.route("/draw/export")
+def export_draw():
+    """Download the full draw (who got which team) as a CSV backup.
+
+    Re-importable via /draw/import to repopulate if the DB is ever reset."""
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("draw"))
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["Participant", "Entries", "Team", "TeamCode", "Group", "Confederation"])
+    rows = (Assignment.query
+            .join(Participant).join(Team, Assignment.team_id == Team.id)
+            .order_by(Participant.name, Team.group_name).all())
+    for a in rows:
+        writer.writerow([
+            a.participant.name, a.participant.entries, a.team.name,
+            a.team.code, a.team.group_name or "", a.team.confederation or "",
+        ])
+    stamp = datetime.utcnow().strftime("%Y%m%d-%H%M")
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=wc2026-draw-{stamp}.csv"},
+    )
+
+
+@app.route("/draw/import", methods=["POST"])
+def import_draw():
+    """Repopulate assignments from a previously exported CSV.
+
+    Matches teams by code and participants by name (creating any missing
+    participants from the Entries column). Replaces the current draw."""
+    if not is_admin():
+        flash("Admin only.", "danger")
+        return redirect(url_for("draw"))
+    file = request.files.get("file")
+    if not file or not file.filename:
+        flash("Choose a CSV file to import.", "warning")
+        return redirect(url_for("draw"))
+    try:
+        text = file.read().decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(text))
+        teams_by_code = {t.code: t for t in Team.query.all()}
+        people_by_name = {p.name: p for p in Participant.query.all()}
+        pairs, skipped = [], 0
+        for row in reader:
+            pname = (row.get("Participant") or "").strip()
+            code = (row.get("TeamCode") or "").strip()
+            if not pname or not code:
+                continue
+            team = teams_by_code.get(code)
+            if team is None:
+                skipped += 1
+                continue
+            person = people_by_name.get(pname)
+            if person is None:
+                try:
+                    entries = int(row.get("Entries", 1))
+                except (TypeError, ValueError):
+                    entries = 1
+                person = Participant(name=pname, entry_fee_paid=max(1, entries) * 5.0)
+                db.session.add(person)
+                db.session.flush()
+                people_by_name[pname] = person
+            pairs.append((person.id, team.id))
+    except Exception as e:
+        flash(f"Could not read that CSV: {e}", "danger")
+        return redirect(url_for("draw"))
+
+    if not pairs:
+        flash("No valid rows found in that CSV — nothing imported.", "warning")
+        return redirect(url_for("draw"))
+
+    Assignment.query.delete()
+    for participant_id, team_id in pairs:
+        db.session.add(Assignment(participant_id=participant_id, team_id=team_id))
+    db.session.commit()
+    msg = f"Imported {len(pairs)} assignments from backup."
+    if skipped:
+        msg += f" ({skipped} row(s) skipped — unknown team code.)"
+    flash(msg, "success")
     return redirect(url_for("draw"))
 
 
@@ -844,12 +981,16 @@ def init_db():
         if not team.flag_emoji:
             team.flag_emoji = FLAG_EMOJIS.get(team.code, "🏳️")
     db.session.commit()
-    # Add any participants from seed_data not already present (idempotent — lets
-    # new entrants be added on deploy without wiping existing data or the draw).
-    existing_participants = {p.name for p in Participant.query.all()}
+    # Sync participants from seed_data (idempotent — lets new entrants be added
+    # and contribution totals corrected on deploy without wiping existing data
+    # or the draw). Admin-added players (not in PARTICIPANTS) are left untouched.
+    existing_participants = {p.name: p for p in Participant.query.all()}
     for p in PARTICIPANTS:
-        if p["name"] not in existing_participants:
+        existing = existing_participants.get(p["name"])
+        if existing is None:
             db.session.add(Participant(**p))
+        elif existing.entry_fee_paid != p["entry_fee_paid"]:
+            existing.entry_fee_paid = p["entry_fee_paid"]
     db.session.commit()
     existing_names = {c.name for c in FunCategory.query.all()}
     added = False
