@@ -19,6 +19,31 @@ FLAG_EMOJIS = {
     "ENG": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "CRO": "🇭🇷", "PAN": "🇵🇦", "GHA": "🇬🇭",
 }
 
+# flagcdn.com slugs (ISO 3166-1 alpha-2, plus gb-sct / gb-eng for the home
+# nations) so we can render real flag IMAGES — emoji flags don't render on
+# Windows/Chrome, which turns 🇧🇷 into "BR" and Scotland/England into blank boxes.
+FLAG_CC = {
+    "MEX": "mx", "CZE": "cz", "KOR": "kr", "RSA": "za",
+    "CAN": "ca", "BIH": "ba", "SUI": "ch", "QAT": "qa",
+    "BRA": "br", "SCO": "gb-sct", "HAI": "ht", "MAR": "ma",
+    "PAR": "py", "TUR": "tr", "AUS": "au", "USA": "us",
+    "ECU": "ec", "GER": "de", "CIV": "ci", "CUW": "cw",
+    "NED": "nl", "SWE": "se", "JPN": "jp", "TUN": "tn",
+    "BEL": "be", "IRN": "ir", "EGY": "eg", "NZL": "nz",
+    "ESP": "es", "URU": "uy", "KSA": "sa", "CPV": "cv",
+    "NOR": "no", "FRA": "fr", "SEN": "sn", "IRQ": "iq",
+    "ARG": "ar", "AUT": "at", "ALG": "dz", "JOR": "jo",
+    "COL": "co", "POR": "pt", "UZB": "uz", "COD": "cd",
+    "ENG": "gb-eng", "CRO": "hr", "PAN": "pa", "GHA": "gh",
+}
+
+
+def flag_url(code, width=80):
+    """Real flag image URL for a team code (renders everywhere, unlike emoji)."""
+    cc = FLAG_CC.get(code)
+    return f"https://flagcdn.com/w{width}/{cc}.png" if cc else ""
+
+
 # 🥚 Easter egg: each flag on a country profile links to that nation's
 # football song / chant. YouTube search links so they never rot.
 def _yt(q):

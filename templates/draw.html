@@ -80,7 +80,8 @@
         <div class="p-3 d-flex flex-wrap gap-1">
           {% for t in p.teams | sort(attribute='group_name') %}
           <span class="team-pill {% if t.eliminated %}eliminated{% endif %}" title="{{ t.name }}">
-            {{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }}
+            {% set fu = flag_url(t.code) %}
+            {% if fu %}<img src="{{ fu }}" alt="" style="height:.95em;width:auto;border-radius:1px;vertical-align:-1px">{% endif %}
             <span class="tla">{{ t.code }}</span>
           </span>
           {% endfor %}
@@ -178,7 +179,7 @@
       <div class="flip-back" id="flipBack">
         <div class="back-reveal">
           <div id="backParticipant" style="font-size:1rem;font-weight:600;color:var(--green)"></div>
-          <div id="backFlag" style="font-size:4.5rem;line-height:1;margin:.2rem 0 .3rem"></div>
+          <img id="backFlag" alt="" style="height:92px;width:auto;margin:.3rem 0 .5rem;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.45)">
           <div class="reveal-team-code" id="backCode"></div>
           <div class="reveal-team-name" id="backTeam"></div>
           <div class="reveal-fact" id="backFact"></div>
@@ -245,7 +246,10 @@ function loadCard(i) {
   document.getElementById('frontParticipant').textContent = a.participant;
   // Back: the team they got + fun fact
   document.getElementById('backParticipant').textContent = `${a.participant} gets…`;
-  document.getElementById('backFlag').textContent = a.flag || '🏳️';
+  const flagImg = document.getElementById('backFlag');
+  flagImg.src = a.flag_url || '';
+  flagImg.alt = a.team;
+  flagImg.style.display = a.flag_url ? '' : 'none';
   document.getElementById('backCode').textContent = `${a.code} · Group ${a.group} · ${a.confederation}`;
   document.getElementById('backTeam').textContent  = a.team;
   document.getElementById('backFact').textContent  = a.fact || '';
@@ -287,7 +291,8 @@ function showDone() {
 function addChip(a) {
   const chip = document.createElement('span');
   chip.className = 'revealed-chip';
-  chip.textContent = `${a.participant.split(' ')[0]} → ${a.flag || ''} ${a.code}`;
+  const flagTag = a.flag_url ? `<img src="${a.flag_url}" alt="" style="height:.8em;width:auto;vertical-align:-1px;margin:0 3px;border-radius:1px">` : '';
+  chip.innerHTML = `${a.participant.split(' ')[0]} →${flagTag}${a.code}`;
   strip.appendChild(chip);
 }
 

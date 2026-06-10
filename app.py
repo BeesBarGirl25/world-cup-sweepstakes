@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response
 from models import db, Team, Participant, Assignment, Match, Prize, FunCategory, FunWinner, AppSettings
-from seed_data import TEAMS, PARTICIPANTS, FUN_CATEGORIES, FLAG_EMOJIS, TEAM_FACTS, TEAM_SONGS
+from seed_data import TEAMS, PARTICIPANTS, FUN_CATEGORIES, FLAG_EMOJIS, TEAM_FACTS, TEAM_SONGS, FLAG_CC, flag_url
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
@@ -25,6 +25,8 @@ def inject_globals():
         "is_admin": is_admin(),
         "FLAG_EMOJIS": FLAG_EMOJIS,
         "TEAM_SONGS": TEAM_SONGS,
+        "FLAG_CC": FLAG_CC,
+        "flag_url": flag_url,
     }
 
 
@@ -458,6 +460,7 @@ def draw():
                 "team": a.team.name,
                 "code": a.team.code,
                 "flag": a.team.flag_emoji or FLAG_EMOJIS.get(a.team.code, "🏳️"),
+                "flag_url": flag_url(a.team.code, 160),
                 "group": a.team.group_name or "?",
                 "confederation": a.team.confederation or "",
                 "fact": random.choice(team_facts),
