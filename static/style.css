@@ -632,10 +632,13 @@ footer {
 }
 .flip-card.flipped { transform: rotateY(180deg); }
 
-/* Keep the team hidden until the card is actually flipped, so you can't read
-   the next card through the turn or peek the back before the reveal. */
-.back-reveal { opacity: 0; transition: opacity 0.1s ease; }
-.flip-card.flipped .back-reveal { opacity: 1; transition: opacity 0.3s ease 0.3s; }
+/* The team/fact are revealed via the .shown class — added on flip, removed
+   INSTANTLY when advancing to the next card. Driving this off a JS class
+   (not .flipped) means the turn back to the next person never momentarily
+   flashes their team: .shown is stripped before the card starts rotating,
+   and the base rule has no transition so the hide is immediate. */
+.back-reveal { opacity: 0; }
+.back-reveal.shown { opacity: 1; transition: opacity 0.3s ease 0.25s; }
 
 .flip-front, .flip-back {
   position: absolute;

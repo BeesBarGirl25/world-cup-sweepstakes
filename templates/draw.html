@@ -214,6 +214,7 @@ const counter    = document.getElementById('revealCounter');
 const revealBtn  = document.getElementById('revealBtn');
 const strip      = document.getElementById('revealedStrip');
 const doneScreen = document.getElementById('revealDone');
+const backReveal = document.querySelector('.back-reveal');
 
 function openReveal() {
   idx = 0; flipped = false; done = false;
@@ -232,6 +233,9 @@ function closeReveal() {
 }
 
 function loadCard(i) {
+  // Hide the back content INSTANTLY before the card turns back, so advancing to
+  // the next person never flashes the team they're about to get.
+  backReveal.classList.remove('shown');
   flipCard.classList.remove('flipped');
   flipped = false;
   document.getElementById('backFact').classList.remove('show');
@@ -253,6 +257,7 @@ function flipNow() {
   if (done || flipped) return;
   clearTimeout(autoTimer);
   flipCard.classList.add('flipped');
+  backReveal.classList.add('shown');
   flipped = true;
   setTimeout(() => document.getElementById('backFact').classList.add('show'), 500);
   addChip(ASSIGNMENTS[idx]);
