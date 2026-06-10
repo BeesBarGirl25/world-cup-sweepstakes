@@ -54,6 +54,16 @@ body::before {
 
 .container { position: relative; z-index: 1; }
 
+/* Flag images (used instead of emoji flags, which don't render on Windows).
+   height is set inline (defaults to 1em) so flags match their text context. */
+.flag-img {
+  width: auto;
+  border-radius: 2px;
+  vertical-align: -0.12em;
+  display: inline-block;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }

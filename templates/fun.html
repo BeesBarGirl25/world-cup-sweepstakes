@@ -40,7 +40,7 @@
           </div>
           {% for t in leaders %}
           <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-            <a href="{{ url_for('team_profile', code=t.code) }}" class="team-pill" style="text-decoration:none">{{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }} <span class="tla">{{ t.code }}</span> {{ t.name }}</a>
+            <a href="{{ url_for('team_profile', code=t.code) }}" class="team-pill" style="text-decoration:none">{{ flag_img(t.code) }} <span class="tla">{{ t.code }}</span> {{ t.name }}</a>
             {% for a in t.assignments %}
             <span class="owner-chip">{{ a.participant.name.split()[0] }}</span>
             {% endfor %}

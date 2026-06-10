@@ -11,10 +11,10 @@
       {% set song = TEAM_SONGS.get(team.code) %}
       {% if song %}
       <a href="{{ song[1] }}" target="_blank" rel="noopener" class="flag-egg has-song" title="🎵 {{ song[0] }}"
-         style="font-size:4rem;line-height:1;text-decoration:none;display:inline-block">{{ team.flag_emoji or FLAG_EMOJIS.get(team.code,'🏳️') }}<span class="song-note">🎵</span></a>
+         style="font-size:4rem;line-height:1;text-decoration:none;display:inline-block">{{ flag_img(team.code, '3.4rem') }}<span class="song-note">🎵</span></a>
       {% else %}
       <div class="flag-egg" onclick="flagParty(this)" title="Go on, give us a tune"
-           style="font-size:4rem;line-height:1;cursor:pointer;display:inline-block">{{ team.flag_emoji or FLAG_EMOJIS.get(team.code,'🏳️') }}</div>
+           style="font-size:4rem;line-height:1;cursor:pointer;display:inline-block">{{ flag_img(team.code, '3.4rem') }}</div>
       {% endif %}
     </div>
     <div class="col">
@@ -58,7 +58,7 @@
         {% if step.opponent.placeholder %}<span style="color:var(--text-dim)">{{ step.opponent.name }}</span>
         {% else %}
           {% if step.opponent.logo %}<img src="{{ step.opponent.logo }}" alt="" width="15" height="15" style="object-fit:contain;vertical-align:-2px">
-          {% else %}{{ FLAG_EMOJIS.get(step.opponent.abbrev,'') }}{% endif %}
+          {% else %}{{ flag_img(step.opponent.abbrev) }}{% endif %}
           {{ step.opponent.name }}
         {% endif %}
       </div>
@@ -84,7 +84,7 @@
       <div class="match-card {% if m.played %}played{% endif %} mb-2">
         <div class="row align-items-center g-2">
           <div class="col">
-            <span style="font-size:1.1rem;margin-right:.3rem">{{ m.home_team.flag_emoji or FLAG_EMOJIS.get(m.home_team.code,'') }}</span>
+            <span style="font-size:1.1rem;margin-right:.3rem">{{ flag_img(m.home_team.code) }}</span>
             <a href="{{ url_for('team_profile', code=m.home_team.code) }}" style="color:var(--text);text-decoration:none;{% if is_home %}font-weight:700{% endif %}">{{ m.home_team.name }}</a>
           </div>
           <div class="col-auto text-center">
@@ -93,7 +93,7 @@
           </div>
           <div class="col text-end">
             <a href="{{ url_for('team_profile', code=m.away_team.code) }}" style="color:var(--text);text-decoration:none;{% if not is_home %}font-weight:700{% endif %}">{{ m.away_team.name }}</a>
-            <span style="font-size:1.1rem;margin-left:.3rem">{{ m.away_team.flag_emoji or FLAG_EMOJIS.get(m.away_team.code,'') }}</span>
+            <span style="font-size:1.1rem;margin-left:.3rem">{{ flag_img(m.away_team.code) }}</span>
           </div>
         </div>
         <div class="match-meta mt-1"><span class="badge bg-surface" style="font-size:.6rem">{{ m.stage }}</span>{% if m.venue %} · {{ m.venue }}{% endif %}</div>
@@ -117,7 +117,7 @@
           {% for row in group_table %}
           <tr style="border-bottom:1px solid var(--border);{% if row.team.id == team.id %}background:var(--gold-dim){% endif %}">
             <td class="ps-3 py-2" style="{% if row.team.id == team.id %}color:var(--gold);font-weight:600{% endif %}">
-              {{ row.team.flag_emoji or '' }} {{ row.team.name }}{% if loop.index <= 2 and row.P > 0 %} <span style="color:var(--green)">↑</span>{% endif %}
+              {{ flag_img(row.team.code) }} {{ row.team.name }}{% if loop.index <= 2 and row.P > 0 %} <span style="color:var(--green)">↑</span>{% endif %}
             </td>
             <td class="text-center">{{ row.P }}</td>
             <td class="text-center" style="color:{% if row.GD > 0 %}var(--green){% elif row.GD < 0 %}var(--red){% else %}var(--text-muted){% endif %}">{{ '+' if row.GD > 0 }}{{ row.GD }}</td>

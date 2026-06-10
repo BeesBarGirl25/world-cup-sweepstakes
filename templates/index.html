@@ -56,7 +56,7 @@
           <td>
             <div class="d-flex flex-wrap gap-1">
               {% for t in p.alive_teams[:4] %}
-              <span class="team-pill" title="{{ t.name }}">{{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }} <span class="tla">{{ t.code }}</span></span>
+              <span class="team-pill" title="{{ t.name }}">{{ flag_img(t.code) }} <span class="tla">{{ t.code }}</span></span>
               {% endfor %}
               {% if p.alive_teams | length > 4 %}<span style="font-size:.75rem;color:var(--text-dim)">+{{ p.alive_teams | length - 4 }}</span>{% endif %}
             </div>
@@ -85,7 +85,7 @@
           <div style="font-size:.8rem;font-weight:600">{{ cat.name }}</div>
           <div style="font-size:.72rem;color:var(--text-muted)">
             {% if leaders %}
-              {% for t in leaders[:2] %}{{ t.flag_emoji or FLAG_EMOJIS.get(t.code,'') }} {{ t.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% if leaders | length > 2 %} +{{ leaders | length - 2 }}{% endif %}
+              {% for t in leaders[:2] %}{{ flag_img(t.code) }} {{ t.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% if leaders | length > 2 %} +{{ leaders | length - 2 }}{% endif %}
             {% else %}
               <span style="color:var(--text-dim)">TBD</span>
             {% endif %}
@@ -102,9 +102,9 @@
     <div class="match-card played mb-2">
       <div class="match-meta mb-1">{{ m.stage }}</div>
       <div class="d-flex align-items-center justify-content-between gap-2">
-        <span class="small fw-semibold">{{ m.home_team.flag_emoji or '' }} {{ m.home_team.name }}</span>
+        <span class="small fw-semibold">{{ flag_img(m.home_team.code) }} {{ m.home_team.name }}</span>
         <span class="score-display">{{ m.result_string }}</span>
-        <span class="small fw-semibold text-end">{{ m.away_team.name }} {{ m.away_team.flag_emoji or '' }}</span>
+        <span class="small fw-semibold text-end">{{ m.away_team.name }} {{ flag_img(m.away_team.code) }}</span>
       </div>
     </div>
     {% endfor %}

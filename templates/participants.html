@@ -52,7 +52,7 @@
         <div class="d-flex flex-wrap gap-1 mt-1">
           {% for t in p.teams | sort(attribute='eliminated') %}
           <span class="team-pill {% if t.eliminated %}eliminated{% endif %}" title="{{ t.name }}">
-            {{ t.flag_emoji or FLAG_EMOJIS.get(t.code, '') }} <span class="tla">{{ t.code }}</span>
+            {{ flag_img(t.code) }} <span class="tla">{{ t.code }}</span>
           </span>
           {% endfor %}
         </div>

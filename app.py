@@ -4,6 +4,7 @@ import io
 import random
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response
+from markupsafe import Markup
 from models import db, Team, Participant, Assignment, Match, Prize, FunCategory, FunWinner, AppSettings
 from seed_data import TEAMS, PARTICIPANTS, FUN_CATEGORIES, FLAG_EMOJIS, TEAM_FACTS, TEAM_SONGS, FLAG_CC, flag_url
 
@@ -19,6 +20,18 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
 
+def flag_img(code, height="1em", extra=""):
+    """Render a team's flag as an <img> (emoji flags don't render on Windows).
+    Height defaults to 1em so it scales with whatever font-size it sits in."""
+    url = flag_url(code, 160)
+    if not url:
+        return Markup("")
+    return Markup(
+        f'<img src="{url}" alt="" loading="lazy" class="flag-img" '
+        f'style="height:{height};{extra}">'
+    )
+
+
 @app.context_processor
 def inject_globals():
     return {
@@ -27,6 +40,7 @@ def inject_globals():
         "TEAM_SONGS": TEAM_SONGS,
         "FLAG_CC": FLAG_CC,
         "flag_url": flag_url,
+        "flag_img": flag_img,
     }
 
 
