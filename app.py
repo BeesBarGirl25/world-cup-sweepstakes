@@ -214,7 +214,9 @@ def get_fun_prizes_by_participant():
 
 
 def get_sweepstakes_summary():
-    total_pot = sum(p.entry_fee_paid for p in Participant.query.all())
+    # Round to the nearest pound for display (contributions include odd pennies,
+    # e.g. Will Hicks £19.42, Martin Durchov £10.39).
+    total_pot = round(sum(p.entry_fee_paid for p in Participant.query.all()))
     fun_prizes = sum(get_fun_prizes_by_participant().values())
     main_prizes = sum(p.amount for p in Prize.query.all())
     return {
@@ -490,20 +492,36 @@ def run_draw():
 
     participants_list = Participant.query.all()
     teams = Team.query.all()
+    if not teams:
+        flash("No teams to draw. Re-seed teams first.", "warning")
+        return redirect(url_for("draw"))
 
-    pool = []
-    for p in participants_list:
-        pool.extend([p] * p.entries)
-    random.shuffle(pool)
-    random.shuffle(teams)
+    # Every entry must yield a DISTINCT team for that person, and teams are
+    # shared as evenly as possible (total entries usually exceeds team count).
+    # Capacity = how many people may share each team, spread evenly.
+    total_entries = sum(p.entries for p in participants_list)
+    base, extra = divmod(total_entries, len(teams))
+    shuffled = teams[:]
+    random.shuffle(shuffled)
+    capacity = {t.id: base + (1 if i < extra else 0) for i, t in enumerate(shuffled)}
 
-    assigned_pairs = set()
-    for i, participant in enumerate(pool):
-        team = teams[i % len(teams)]
-        pair = (participant.id, team.id)
-        if pair not in assigned_pairs:
-            assigned_pairs.add(pair)
-            db.session.add(Assignment(participant_id=participant.id, team_id=team.id))
+    # Deal to the people with most entries first — they're the hardest to satisfy
+    # with distinct teams, so placing them early avoids dead-ends.
+    for p in sorted(participants_list, key=lambda x: x.entries, reverse=True):
+        taken = set()
+        for _ in range(p.entries):
+            options = [t for t in teams if t.id not in taken and capacity[t.id] > 0]
+            if not options:  # capacity exhausted — relax evenness, keep distinctness
+                options = [t for t in teams if t.id not in taken]
+            if not options:  # more entries than teams (impossible here) — stop
+                break
+            # Prefer the most-available teams to keep sharing balanced.
+            random.shuffle(options)
+            options.sort(key=lambda t: capacity[t.id], reverse=True)
+            team = options[0]
+            taken.add(team.id)
+            capacity[team.id] -= 1
+            db.session.add(Assignment(participant_id=p.id, team_id=team.id))
 
     db.session.commit()
     flash("Draw complete!", "success")

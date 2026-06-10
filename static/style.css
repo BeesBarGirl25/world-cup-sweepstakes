@@ -632,6 +632,11 @@ footer {
 }
 .flip-card.flipped { transform: rotateY(180deg); }
 
+/* Keep the team hidden until the card is actually flipped, so you can't read
+   the next card through the turn or peek the back before the reveal. */
+.back-reveal { opacity: 0; transition: opacity 0.1s ease; }
+.flip-card.flipped .back-reveal { opacity: 1; transition: opacity 0.3s ease 0.3s; }
+
 .flip-front, .flip-back {
   position: absolute;
   inset: 0;
