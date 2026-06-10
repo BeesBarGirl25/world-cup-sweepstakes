@@ -353,6 +353,256 @@ TEAM_FACTS = {
     ],
 }
 
+# Extra wilder/wackier trivia for ONLY the 48 teams actually in the 2026 draw,
+# appended to TEAM_FACTS so a country owned by several players shows different
+# facts on each reveal. (TEAM_FACTS above also carries non-qualified nations —
+# those are intentionally left untouched.)
+_EXTRA_FACTS = {
+    "MEX": [
+        "The 'Mexican Wave' got its name because it was beamed worldwide from the 1986 World Cup in Mexico — the rest of the planet has called it that ever since.",
+        "Keeper Jorge Campos designed his own eye-wateringly neon kits AND was so short he sometimes moonlighted as a striker.",
+        "Hugo Sánchez celebrated nearly every goal with a full somersault — and bagged 234 La Liga goals doing it.",
+    ],
+    "CZE": [
+        "Antonín Panenka won Euro 1976 with a cheeky chipped penalty — every dinked spot-kick since is literally called 'a Panenka'.",
+        "Petr Čech wore a rugby-style protective headguard for a decade after a fractured skull — instantly the most recognisable keeper alive.",
+        "As Czechoslovakia they reached two World Cup finals (1934, 1962) and lost both to absolute giants (Italy, then Brazil).",
+    ],
+    "KOR": [
+        "Their 2002 semi-final run is still the best ever by an Asian nation — and the 'Red Devils' supporters set Guinness records for crowd size.",
+        "Ahn Jung-hwan scored the golden goal that dumped Italy out in 2002 — and was promptly sacked by his Italian club for it.",
+        "South Korea's fans turned an entire nation red; the colour co-ordination from the stands was visible from space (almost).",
+    ],
+    "RSA": [
+        "Their 2010 World Cup gave the world the vuvuzela — a horn so deafening broadcasters had to invent audio filters to mute it.",
+        "The 2010 Jabulani match ball was so unpredictable that goalkeepers publicly moaned it 'flew like a beach ball'.",
+        "'Bafana Bafana' literally means 'The Boys, The Boys' in Zulu.",
+    ],
+    "CAN": [
+        "Canada's 1986 World Cup squad failed to score a single goal — then didn't qualify again for 36 years.",
+        "Alphonso Davies, nicknamed 'Roadrunner', went from a Ghanaian refugee camp to Bayern Munich and is among the fastest players on earth.",
+        "Canada's women's team won Olympic gold in 2021 — and Christine Sinclair is the all-time top scorer in international football, man or woman.",
+    ],
+    "BIH": [
+        "FIFA once SUSPENDED Bosnia because the federation insisted on having three presidents at once (one per ethnic group) instead of one.",
+        "Edin Džeko, 'The Bosnian Diamond', is their all-time top scorer by a country mile.",
+        "Their entire footballing identity was forged by a generation born during the 1990s war — the team became a symbol of unity.",
+    ],
+    "SUI": [
+        "Switzerland are the only team ever knocked out of a World Cup (2006) without conceding a single goal — they lost on penalties having scored none.",
+        "FIFA's HQ is in Zürich, so Switzerland literally hosts the government of world football.",
+        "Swiss eligibility rules give them huge squad depth — many stars could've played for a parent's homeland instead.",
+    ],
+    "QAT": [
+        "Qatar are the only host nation in World Cup history to lose their opening game — then they lost all three.",
+        "Their 2022 tournament was the first ever played in winter, shifted to Nov–Dec to dodge 50°C summer heat.",
+        "They built Stadium 974 entirely from shipping containers — and dismantled it again after the tournament.",
+    ],
+    "BRA": [
+        "Brazil only adopted the famous yellow shirt AFTER the trauma of losing the 1950 final in white — fans decided white was unlucky.",
+        "The Maracanã crammed in nearly 200,000 people for that 1950 final — the silence after Uruguay scored is called the 'Maracanazo'.",
+        "Brazil are the only nation to appear at all 22 World Cups — and they travel with their own chef.",
+    ],
+    "SCO": [
+        "Scotland played in the very first official international football match — a 0–0 draw with England in 1872.",
+        "So confident before the 1978 World Cup, they paraded the squad around Hampden BEFORE flying out... then crashed out in the group.",
+        "The Tartan Army are so cheerfully well-behaved abroad they've literally won FIFA fair-play awards just for being fans.",
+        "'Yes Sir, I Can Boogie', a 1977 disco hit, became their unofficial anthem after qualifying for Euro 2020.",
+    ],
+    "HAI": [
+        "At the 1974 World Cup, Haiti's Emmanuel Sanon ended Italy legend Dino Zoff's record 1,142-minute international clean sheet.",
+        "Brazil's full national team played a 'peace match' in Haiti in 2004, watched by hundreds of thousands in the streets.",
+        "Reaching 1974 meant out-qualifying far bigger Central American and Caribbean rivals — a tiny nation's giant moment.",
+    ],
+    "MAR": [
+        "At Qatar 2022, Moroccan players invited their MUMS onto the pitch to celebrate — the images went viral worldwide.",
+        "'The Atlas Lions' are named after the now-extinct Atlas lion and the mountains that run through the country.",
+        "In 1986 Morocco became the first African team ever to top a World Cup group.",
+    ],
+    "PAR": [
+        "Goalkeeper José Luis Chilavert took free kicks AND penalties — and once scored a hat-trick of them in a single club match.",
+        "Chilavert is one of only a handful of keepers to ever score in World Cup qualifying.",
+        "Paraguay drew all three group games at the 2010 World Cup and STILL reached the quarter-finals — kings of the goalless grind.",
+    ],
+    "TUR": [
+        "Hakan Şükür scored the fastest goal in World Cup history — just 11 seconds — at the 2002 third-place playoff.",
+        "Turkey finished THIRD on their World Cup return in 2002 after a 48-year absence — some entrance.",
+        "Turkish derby atmospheres have been measured among the loudest crowds in all of world sport.",
+    ],
+    "AUS": [
+        "Australia once won a World Cup qualifier 31–0 against American Samoa — the biggest international result in football history.",
+        "Tim Cahill scored Australia's first-ever World Cup goals and celebrated every one by BOXING the corner flag.",
+        "They switched continents entirely — leaving Oceania for Asia in 2006 — to get a fairer crack at qualifying.",
+    ],
+    "USA": [
+        "When the USA beat England 1–0 in 1950, the result was so unbelievable some British papers assumed a typo and printed 10–1 to England.",
+        "The 1994 World Cup, hosted in the USA, still holds the record for the highest average attendance ever.",
+        "'Captain America' Christian Pulisic became the most expensive American footballer when Chelsea paid around £58m for him.",
+    ],
+    "ECU": [
+        "Ecuador play qualifiers in Quito at 2,850m altitude — visiting South American giants regularly run out of oxygen up there.",
+        "They kicked off the 2022 World Cup by beating hosts Qatar — the first time an opening host had ever LOST.",
+        "Only their fifth World Cup ever — Ecuadorian football is young, hungry and rising fast.",
+    ],
+    "GER": [
+        "Germany have reached an absurd EIGHT World Cup finals — more than any other nation on the planet.",
+        "Their 7–1 demolition of Brazil in the 2014 semi-final was so traumatic Brazilians named it the 'Mineirazo'.",
+        "Miroslav Klose is the World Cup's all-time top scorer with 16 goals — and never scored a single one from a penalty.",
+    ],
+    "CIV": [
+        "Didier Drogba's televised plea helped pause Ivory Coast's civil war — and he later moved a match to the rebel stronghold as a peace gesture.",
+        "They won the 2024 AFCON on home soil after SACKING their coach mid-tournament and nearly being eliminated in the group.",
+        "The Touré brothers, Yaya and Kolo, starred for both Ivory Coast and Manchester City.",
+    ],
+    "CUW": [
+        "With about 150,000 people, Curaçao would be the SMALLEST nation ever to play at a World Cup — the whole island fits in a big-city suburb.",
+        "They out-qualified far bigger Caribbean rivals despite barely having enough people to fill a Premier League stadium.",
+        "Many of their players come through the Dutch system thanks to the island's ties to the Netherlands.",
+    ],
+    "NED": [
+        "The Netherlands invented 'Total Football' in the 1970s — where literally any outfield player could play any position.",
+        "The 'Cruyff Turn' debuted at the 1974 World Cup (on a baffled Swedish defender) and is still taught to kids worldwide.",
+        "In 2014 they subbed a keeper ON purely for a penalty shootout — Tim Krul came on cold and saved two.",
+    ],
+    "SWE": [
+        "At the 1958 final on home soil, Sweden ran into a 17-year-old Pelé — who scored twice and cried on the pitch afterwards.",
+        "Zlatan Ibrahimović scored a 30-yard overhead bicycle kick against England — possibly the most outrageous goal ever.",
+        "IKEA, ABBA and a stubbornly good football team — Sweden punch well above their weight.",
+    ],
+    "JPN": [
+        "Japan's fans famously stay behind to clean the stadium after every match — and the players tidy their dressing room and leave a thank-you note.",
+        "At Qatar 2022 they beat BOTH Germany and Spain... and lost to Costa Rica in between. Pure chaos.",
+        "Japan is obsessed with football mascots — the J-League alone has hundreds of gloriously surreal ones.",
+    ],
+    "TUN": [
+        "Tunisia became the first African team to ever win a World Cup match, beating Mexico in 1978.",
+        "The 'Eagles of Carthage' supporters create some of the most colourful tifo displays in African football.",
+        "They beat reigning champions France at the 2022 World Cup — and still went home in the group stage. Brutal.",
+    ],
+    "BEL": [
+        "Belgium is split by language, so the squad chats in a mix of French, Dutch and English — and the country has multiple anthems.",
+        "Their 'Golden Generation' sat top of the FIFA world rankings for years without winning a single trophy.",
+        "In 2018 they scored one of the great World Cup counter-attacks — start to finish in seconds — to sink Japan from a last-gasp corner.",
+    ],
+    "IRN": [
+        "Ali Daei was the FIRST man ever to reach 100 international goals — a record that stood until Cristiano Ronaldo.",
+        "Tehran's Azadi Stadium is one of the most intimidating fortresses in all of Asian football.",
+        "Nicknamed 'Team Melli', Iran are perennial kings of Asian qualifying.",
+    ],
+    "EGY": [
+        "Egypt were the first African AND Arab nation to ever play at a World Cup — all the way back in 1934.",
+        "They've won the Africa Cup of Nations a record SEVEN times.",
+        "Mohamed Salah is so adored that over a million Egyptians wrote his name on their 2018 presidential ballots.",
+    ],
+    "NZL": [
+        "New Zealand were the ONLY unbeaten team at the entire 2010 World Cup — they drew all three games then went home.",
+        "The 'All Whites' are cheekily named in direct contrast to the rugby All Blacks.",
+        "Their biggest opponent is geography — qualifying means flying further than any other nation on earth.",
+    ],
+    "ESP": [
+        "Spain's tiki-taka peaked at Euro 2012, won 4–0 in the final while barely breaking sweat after a record-breaking passing run.",
+        "Despite decades of brilliant clubs, Spain didn't win a World Cup until 2010 — finally shedding the 'chokers' tag.",
+        "Captain Iker Casillas celebrated the 2010 win by kissing touchline reporter (and girlfriend) Sara Carbonero live on TV.",
+    ],
+    "URU": [
+        "Uruguay have just 3.5 million people but proudly wear FOUR stars — counting two 1920s Olympic golds FIFA recognises as world titles.",
+        "They won the very first World Cup in 1930, on home soil.",
+        "Luis Suárez handballed on the line vs Ghana in 2010, got sent off — then celebrated wildly when Ghana missed the penalty.",
+    ],
+    "KSA": [
+        "Saudi Arabia beat eventual champions Argentina 2–1 at the 2022 World Cup — and the king declared a NATIONAL HOLIDAY.",
+        "Saeed Al-Owairan scored a 70-yard solo 'goal of the tournament' vs Belgium at USA 1994.",
+        "Their Pro League has since signed Ronaldo, Benzema and more — football's centre of gravity is tilting east.",
+    ],
+    "CPV": [
+        "Cape Verde — ten tiny Atlantic islands with about 500,000 people — qualified for their first-ever World Cup for 2026.",
+        "'The Blue Sharks' beat much bigger African nations to get there — a genuine fairy tale.",
+        "Much of the squad emerged from the huge Cape Verdean diaspora in Portugal, the Netherlands and the US.",
+    ],
+    "NOR": [
+        "Norway have NEVER lost to Brazil — played them four times, won two, drew two. A flawless record vs the five-time champions.",
+        "Erling Haaland's dad Alfie also played for Norway — and was famously on the receiving end of a Roy Keane revenge tackle.",
+        "Haaland and Ødegaard give Norway arguably the most thrilling attacking duo at the whole tournament.",
+    ],
+    "FRA": [
+        "Zinedine Zidane ended his career by HEADBUTTING an opponent in the 2006 final — and still won the tournament's Golden Ball.",
+        "In 2010 the entire France squad went on STRIKE at the World Cup and refused to train. Total meltdown.",
+        "France have reached four World Cup finals since 1998 — their multicultural squad is so deep it's been called a 'World XI'.",
+    ],
+    "SEN": [
+        "Senegal beat reigning champions France in the very first game of the 2002 World Cup — on their tournament debut.",
+        "Sadio Mané is so revered he built a hospital, a school and a post office in his home village instead of buying supercars.",
+        "'The Lions of Teranga' are the reigning African champions (2022).",
+    ],
+    "IRQ": [
+        "Iraq won the 2007 Asian Cup just months after intense conflict at home — a squad of mixed backgrounds united a fractured nation.",
+        "Younis Mahmoud's winning header in that final is one of Asian football's most iconic and emotional moments.",
+        "The 'Lions of Mesopotamia' return to the World Cup for the first time since 1986.",
+    ],
+    "ARG": [
+        "Maradona's 'Hand of God' AND his 'Goal of the Century' came in the SAME match vs England in 1986 — four minutes apart.",
+        "Their fan anthem 'Muchachos' was sung so loudly at Qatar 2022 it became a real-world chart hit.",
+        "Argentina's 2022 homecoming parade drew over 4 million people — the team eventually had to finish it by HELICOPTER.",
+    ],
+    "AUT": [
+        "Austria beat Switzerland 7–5 at the 1954 World Cup — twelve goals, the highest-scoring game in World Cup history.",
+        "Their 1930s 'Wunderteam' were coffee-house footballing pioneers before tactics were even fashionable.",
+        "David Alaba has won the Champions League and plays for Real Madrid — yet captains comparatively tiny Austria.",
+    ],
+    "ALG": [
+        "Algeria beat West Germany in 1982 — sparking the infamous 'Disgrace of Gijón', where Germany and Austria played out a suspicious result to eliminate them.",
+        "That very scandal is the reason final group games now kick off SIMULTANEOUSLY.",
+        "Their 2019 AFCON win sparked street parties from Algiers all the way to Paris.",
+    ],
+    "JOR": [
+        "Jordan reached their first-ever Asian Cup final in 2024, knocking out South Korea on the way.",
+        "2026 is Jordan's first-ever World Cup — a historic debut for the 'Chivalrous Ones'.",
+        "Jordan's FA was long led by Prince Ali, who once ran against Sepp Blatter for the FIFA presidency.",
+    ],
+    "COL": [
+        "Keeper René Higuita invented the outrageous 'scorpion kick' — and once tried to dribble a striker near halfway at Italia '90. It went very badly.",
+        "Carlos Valderrama's enormous blond afro is one of the most iconic looks in football history.",
+        "The whole squad does a synchronised dance celebration — James Rodríguez's 2014 goals made it world-famous.",
+    ],
+    "POR": [
+        "Cristiano Ronaldo is the all-time top scorer in men's international football — and the first to score at FIVE different World Cups.",
+        "Portugal won Euro 2016 even after Ronaldo limped off injured in the final — he then 'co-managed' from the touchline like a man possessed.",
+        "Eusébio, the 'Black Panther', dragged Portugal back from 3–0 down to North Korea in 1966, scoring four himself.",
+    ],
+    "UZB": [
+        "Uzbekistan reach their first-ever World Cup in 2026 after decades of agonising near-misses.",
+        "They were once denied a deserved qualifier replay despite FIFA admitting the referee made a genuinely unique rule error.",
+        "Tashkent's Pakhtakor is one of Central Asia's biggest clubs and the beating heart of Uzbek football.",
+    ],
+    "COD": [
+        "As Zaire in 1974, a player infamously sprinted out and BOOTED a Brazil free kick away before it was taken — baffling the watching world.",
+        "As Zaire they won back-to-back Africa Cups in 1968 and 1974.",
+        "The 'Leopards' return to the World Cup stage after a wait of more than 50 years.",
+    ],
+    "ENG": [
+        "England wrote the first laws of football in 1863 — then waited 103 years to actually win a World Cup.",
+        "Their 1966 win featured a Geoff Hurst hat-trick and a goal that may or may not have crossed the line — still argued about today.",
+        "England lost their first penalty shootout in 1990 and then spent roughly 28 years apologising for it.",
+    ],
+    "CRO": [
+        "Croatia, population 3.8 million, reached a World Cup final (2018) and semi-final (2022) in consecutive tournaments.",
+        "Their red-and-white checkerboard shirt is one of the most instantly recognisable kits in world football.",
+        "Luka Modrić broke the decade-long Messi–Ronaldo grip on the Ballon d'Or in 2018.",
+    ],
+    "PAN": [
+        "Panama declared an actual NATIONAL HOLIDAY when they qualified for their first World Cup in 2017.",
+        "The qualifying goal that sent them there looked like it never crossed the line — but it sent a whole nation into delirium anyway.",
+        "Panama celebrated merely reaching the 2018 World Cup harder than most teams celebrate winning it.",
+    ],
+    "GHA": [
+        "Luis Suárez's deliberate goal-line handball denied Ghana a historic 2010 semi-final — and Asamoah Gyan smashed the resulting penalty off the bar.",
+        "The 'Black Stars' are named after the star on their flag, a symbol of African freedom.",
+        "With Abedi Pele and the Ayew football dynasty, Ghana are genuine African royalty.",
+    ],
+}
+for _code, _facts in _EXTRA_FACTS.items():
+    TEAM_FACTS.setdefault(_code, []).extend(_facts)
+
 # Official 2026 FIFA World Cup draw — groups, codes and names from ESPN.
 TEAMS = [
     # Group A
