@@ -748,6 +748,12 @@ PARTICIPANTS = [
     {"name": "Daniela Casilli",    "entry_fee_paid":  5.00},  # 1 entry
     {"name": "Joe Watts",          "entry_fee_paid":  5.00},  # 1 entry
     {"name": "Sian Ayres",         "entry_fee_paid":  5.00},  # 1 entry
+    {"name": "Catherine Joyce",    "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Ben Hemsi",          "entry_fee_paid": 20.00},  # 4 entries
+    {"name": "Pete Campton",       "entry_fee_paid": 10.00},  # 4 entries
+    {"name": "Jack O'Dea",         "entry_fee_paid":  4.71},  # 1 entry
+    {"name": "Raphael Zindi",      "entry_fee_paid": 10.00},  # 2 entries
+    {"name": "Gemma Ullyatt",      "entry_fee_paid":  5.00}   # 1 entry
 ]
 
 FUN_CATEGORIES = [
