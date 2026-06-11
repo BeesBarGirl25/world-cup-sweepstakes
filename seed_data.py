@@ -756,7 +756,8 @@ PARTICIPANTS = [
     {"name": "Gemma Ullyatt",      "entry_fee_paid":  5.00},  # 1 entry
     {"name": "William Waterton",   "entry_fee_paid": 10.00},  # 2 entries
     {"name": "Nicholas Barradas",  "entry_fee_paid":  5.00},  # 1 entry
-    {"name": "Mark Williams",      "entry_fee_paid": 10.00}   # 2 entries
+    {"name": "Mark Williams",      "entry_fee_paid": 10.00},   # 2 entries
+    {"name": "Paul Lamb",          "entry_fee_paid": 10.00}   # 2 entries
 ]
 
 FUN_CATEGORIES = [
