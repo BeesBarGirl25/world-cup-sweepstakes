@@ -2,7 +2,8 @@ import os
 import csv
 import io
 import random
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response
 from markupsafe import Markup
 from models import db, Team, Participant, Assignment, Match, Prize, FunCategory, FunWinner, AppSettings
@@ -18,6 +19,20 @@ app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+
+# Match times come from ESPN as UTC and are stored naive-UTC. Display them in
+# UK local time so kickoffs read correctly (BST in summer, GMT in winter).
+UK_TZ = ZoneInfo("Europe/London")
+
+
+@app.template_filter("uk")
+def uk_time(dt, fmt="%d %b %Y %H:%M"):
+    """Format a datetime in UK local time. Naive values are assumed UTC."""
+    if not dt:
+        return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(UK_TZ).strftime(fmt)
 
 
 def flag_img(code, height="1em", extra=""):

@@ -89,7 +89,7 @@
           </div>
           <div class="col-auto text-center">
             {% if m.played %}<span class="score-display" style="font-size:1.1rem">{{ m.result_string }}</span>
-            {% else %}<span class="match-meta">{% if m.match_date %}{{ m.match_date.strftime('%d %b %H:%M') }}{% else %}TBC{% endif %}</span>{% endif %}
+            {% else %}<span class="match-meta">{% if m.match_date %}{{ m.match_date|uk('%d %b %H:%M') }}{% else %}TBC{% endif %}</span>{% endif %}
           </div>
           <div class="col text-end">
             <a href="{{ url_for('team_profile', code=m.away_team.code) }}" style="color:var(--text);text-decoration:none;{% if not is_home %}font-weight:700{% endif %}">{{ m.away_team.name }}</a>

@@ -41,7 +41,7 @@
   <div class="bracket-matchup {% if m.completed %}played{% endif %}{% if m.state == 'in' %} live{% endif %}">
     {{ bkt_team(m.home, home_win, show_score) }}
     {{ bkt_team(m.away, away_win, show_score) }}
-    <div class="bkt-date">{% if m.state == 'in' %}<span style="color:var(--red)">● LIVE</span>{% elif m.date %}{{ m.date.strftime('%d %b') }}{% else %}TBC{% endif %}</div>
+    <div class="bkt-date">{% if m.state == 'in' %}<span style="color:var(--red)">● LIVE</span>{% elif m.date %}{{ m.date|uk('%d %b') }}{% else %}TBC{% endif %}</div>
   </div>
   {% endif %}
 {% endmacro %}
@@ -148,7 +148,7 @@
             <div class="col-auto text-center" style="min-width:74px">
               {% if m.state == 'in' %}<span class="badge" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,109,.3)">● {{ m.status_detail or 'LIVE' }}</span>
               {% elif m.state == 'post' %}<span class="match-meta d-block">FT</span>{% if m.home.shootout is not none and m.away.shootout is not none %}<span class="match-meta">pens {{ m.home.shootout }}–{{ m.away.shootout }}</span>{% endif %}
-              {% else %}<span class="score-display" style="font-size:1rem">{{ m.date.strftime('%H:%M') if m.date else 'TBC' }}</span>{% endif %}
+              {% else %}<span class="score-display" style="font-size:1rem">{{ m.date|uk('%H:%M') if m.date else 'TBC' }}</span>{% endif %}
             </div>
             {{ fx_side(m.away, m.away.score, show_score, 'end') }}
           </div>
@@ -159,7 +159,7 @@
         </div>
       {% endfor %}
       {% endfor %}
-      <div class="match-meta mt-3">Live from ESPN · times UTC</div>
+      <div class="match-meta mt-3">Live from ESPN · times UK</div>
     {% else %}
     <div class="alert alert-info">No fixtures available right now.</div>
     {% endif %}
@@ -187,7 +187,7 @@
         </div>
         <div class="match-meta mt-1 d-flex gap-2 flex-wrap">
           <span class="badge bg-surface" style="font-size:.6rem">{{ m.stage }}</span>
-          {% if m.match_date %}<span>{{ m.match_date.strftime('%d %b %Y %H:%M') }}</span>{% endif %}
+          {% if m.match_date %}<span>{{ m.match_date|uk('%d %b %Y %H:%M') }}</span>{% endif %}
           {% if m.venue %}<span>· {{ m.venue }}</span>{% endif %}
           {% if m.home_yellows is not none or m.home_reds is not none %}
           <span class="ms-auto">🟨 {{ m.home_yellows or 0 }} 🟥 {{ m.home_reds or 0 }} &nbsp;|&nbsp; 🟨 {{ m.away_yellows or 0 }} 🟥 {{ m.away_reds or 0 }}</span>
