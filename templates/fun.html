@@ -9,6 +9,8 @@
 <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:1.5rem">
   Each fun category winner earns £10 from the pot. Multiple category wins stack.
   If two players share the winning team they each collect independently.
+  Most ties are settled by the tie-breakers shown on each card; if teams are
+  still level, every tied winner gets the full £10.
   Fun prizes are deducted before the main pot is split among the tournament winner(s).
 </p>
 
@@ -23,6 +25,7 @@
   {% set cat = item.cat %}
   {% set leaders = item.leaders %}
   {% set is_auto = item.is_auto %}
+  {% set tiebreak = item.tiebreak %}
   <div class="col-sm-6 col-xl-4">
     <div class="card h-100" style="{% if leaders %}border-color:rgba(240,165,0,.3){% endif %}">
       <div class="card-header {% if leaders %}gold{% endif %}">
@@ -31,7 +34,14 @@
         <span class="float-end" style="font-family:'Bebas Neue',sans-serif;color:var(--gold)">£{{ cat.prize | int }}</span>
       </div>
       <div class="p-3 flex-grow-1 d-flex flex-column">
-        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">{{ cat.description }}</p>
+        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.5rem">{{ cat.description }}</p>
+
+        {% if tiebreak %}
+        <div style="font-size:.7rem;color:var(--text-dim);margin-bottom:.75rem;display:flex;gap:.35rem;align-items:flex-start">
+          <i class="bi bi-shuffle" style="color:var(--gold);margin-top:.1rem"></i>
+          <span>{{ tiebreak }}</span>
+        </div>
+        {% endif %}
 
         {% if leaders %}
         <div class="mb-2">

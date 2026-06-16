@@ -266,6 +266,23 @@ FUN_CALCS = {
     "fairest":       _calc_fairest,
 }
 
+# Plain-English tie-break order shown on the fun cards (the primary metric is
+# already in each category's description, so these list the deciders after it).
+# Must match the sort keys in the _calc_* functions above.
+FUN_TIEBREAKS = {
+    "wooden_spoon":    "Tie-break: worse goal difference, then fewer goals scored, then more cards.",
+    "biggest_loser":   "Tie-break: more goals conceded in the defeat.",
+    "dirtiest":        "Tie-break: more red cards, then fewer matches played.",
+    "best_defense":    "Tie-break: more matches played, then more goals scored.",
+    "golden_boot":     "Tie-break: fewer goals conceded, then fewer matches played.",
+    "penalty_kings":   "Tie-break: further tournament progress.",
+    "plucky_underdog": "Tie-break: better goal difference, more goals scored, then fewer conceded.",
+    "draw_specialists":"Tie-break: fewer matches played, then more goals in those draws.",
+    "sieve":           "Tie-break: fewer goals scored, then fewer matches played.",
+    "comeback_kings":  "Tie-break: bigger half-time deficit overturned.",
+    "fairest":         "Tie-break: fewer red cards, more matches played, then more goals scored.",
+}
+
 
 def get_fun_leaders(category):
     """Return (teams, is_auto) — teams currently leading this fun category."""
@@ -463,7 +480,8 @@ def fun():
     cat_data = []
     for cat in categories:
         leaders, is_auto = get_fun_leaders(cat)
-        cat_data.append({"cat": cat, "leaders": leaders, "is_auto": is_auto})
+        cat_data.append({"cat": cat, "leaders": leaders, "is_auto": is_auto,
+                         "tiebreak": FUN_TIEBREAKS.get(cat.calc_key)})
     fun_prizes_map = get_fun_prizes_by_participant()
     summary = get_sweepstakes_summary()
     teams = Team.query.order_by(Team.name).all()
