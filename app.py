@@ -1141,7 +1141,7 @@ if not app.debug or _os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         from apscheduler.schedulers.background import BackgroundScheduler
         from espn import sync_fixtures as _sync
         _scheduler = BackgroundScheduler(daemon=True)
-        _scheduler.add_job(lambda: _sync(app), "interval", hours=3, id="sync_fixtures")
+        _scheduler.add_job(lambda: _sync(app), "interval", minutes=10, id="sync_fixtures")
         _scheduler.start()
     except Exception as _e:
         print(f"Scheduler not started: {_e}")

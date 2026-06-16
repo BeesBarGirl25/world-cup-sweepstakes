@@ -422,11 +422,13 @@ def sync_fixtures(app):
                     existing.match_date = f["date"].replace(tzinfo=None); changed = True
                 if f["venue"] and existing.venue != f["venue"]:
                     existing.venue = f["venue"]; changed = True
-                if scored and existing.home_score != home_score:
+                if scored and (existing.home_score != home_score
+                               or existing.away_score != away_score):
                     existing.home_score = home_score
                     existing.away_score = away_score
                     changed = True
-                if home_pens is not None and existing.home_penalties != home_pens:
+                if home_pens is not None and (existing.home_penalties != home_pens
+                                              or existing.away_penalties != away_pens):
                     existing.home_penalties = home_pens
                     existing.away_penalties = away_pens
                     existing.penalty_winner_id = (
