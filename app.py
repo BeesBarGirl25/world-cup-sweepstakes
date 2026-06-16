@@ -277,22 +277,15 @@ def get_fun_leaders(category):
 def get_fun_prizes_by_participant():
     """Returns dict of participant_id → total fun prizes earned.
 
-    A category prize is split equally between the teams that tie for it, and
-    each team's share is split again between that team's owners — so an
-    unbroken tie never over-allocates the pot."""
+    Each owner of a winning team gets the full category prize. If a category
+    ends in an unbroken tie (multiple teams share top spot after every
+    tie-breaker), every tied winner still receives the full prize."""
     prizes = {}
     for cat in FunCategory.query.order_by(FunCategory.sort_order).all():
         teams, _ = get_fun_leaders(cat)
-        if not teams:
-            continue
-        team_share = cat.prize / len(teams)
         for team in teams:
-            owners = team.assignments
-            if not owners:
-                continue
-            per_owner = team_share / len(owners)
-            for a in owners:
-                prizes[a.participant_id] = prizes.get(a.participant_id, 0) + per_owner
+            for a in team.assignments:
+                prizes[a.participant_id] = prizes.get(a.participant_id, 0) + cat.prize
     return prizes
 
 
