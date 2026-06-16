@@ -62,22 +62,26 @@ def inject_globals():
 # ── Fun category auto-calculators ─────────────────────────────────────────────
 
 def _calc_wooden_spoon():
-    teams = Team.query.all()
+    """Worst group team: fewest points → worst GD → fewest scored → most cards.
+    Teams identical on all four split the prize."""
     records = []
-    for team in teams:
-        played = any(m.played for m in team.all_matches if m.stage == "Group Stage")
-        if not played:
+    for team in Team.query.all():
+        if not any(m.played for m in team.all_matches if m.stage == "Group Stage"):
             continue
-        records.append((team.group_points, team.group_goals_for - team.group_goals_against, team))
+        gd = team.group_goals_for - team.group_goals_against
+        records.append((team.group_points, gd, team.group_goals_for,
+                        team.total_card_points, team))
     if not records:
         return []
-    records.sort(key=lambda x: (x[0], x[1]))
-    worst_pts, worst_gd, _ = records[0]
-    return [t for (p, g, t) in records if p == worst_pts and g == worst_gd]
+    records.sort(key=lambda x: (x[0], x[1], x[2], -x[3]))
+    worst = records[0][:4]
+    return [r[-1] for r in records if r[:4] == worst]
 
 
 def _calc_biggest_loser():
-    worst = None
+    """Heaviest single defeat: biggest margin → most conceded. Different teams
+    tied on both (e.g. two 4-0 hammerings) split the prize."""
+    worst_by_team = {}  # team_id -> (margin, conceded, team) for its worst loss
     for m in Match.query.filter(Match.home_score.isnot(None)).all():
         h, a = m.home_score, m.away_score
         if h == a:
@@ -86,129 +90,166 @@ def _calc_biggest_loser():
             diff, loser, conceded = h - a, m.away_team, a
         else:
             diff, loser, conceded = a - h, m.home_team, h
-        if worst is None or diff > worst[1] or (diff == worst[1] and conceded > worst[2]):
-            worst = (loser, diff, conceded)
-    return [worst[0]] if worst else []
+        cur = worst_by_team.get(loser.id)
+        if cur is None or (diff, conceded) > (cur[0], cur[1]):
+            worst_by_team[loser.id] = (diff, conceded, loser)
+    if not worst_by_team:
+        return []
+    ranked = sorted(worst_by_team.values(), key=lambda x: (-x[0], -x[1]))
+    top_diff, top_conc = ranked[0][0], ranked[0][1]
+    return [t for (d, c, t) in ranked if d == top_diff and c == top_conc]
 
 
 def _calc_dirtiest():
-    teams = Team.query.all()
-    if not teams:
+    """Most card points → most reds → fewest matches (dirtier per game)."""
+    data = []
+    for t in Team.query.all():
+        if t.total_card_points <= 0:
+            continue
+        mp = sum(1 for m in t.all_matches if m.played)
+        data.append((t.total_card_points, t.total_reds, mp, t))
+    if not data:
         return []
-    card_data = [(t.total_card_points, t.total_reds, t) for t in teams
-                 if t.total_card_points > 0]
-    if not card_data:
-        return []
-    card_data.sort(key=lambda x: (-x[0], -x[1]))
-    top_pts, top_reds, _ = card_data[0]
-    return [t for (pts, reds, t) in card_data if pts == top_pts and reds == top_reds]
+    data.sort(key=lambda x: (-x[0], -x[1], x[2]))
+    top = data[0][:3]
+    return [d[-1] for d in data if d[:3] == top]
 
 
 def _calc_best_defense():
-    teams = Team.query.all()
-    played = [(t.total_goals_conceded, t) for t in teams
-              if any(m.played for m in t.all_matches)]
-    if not played:
+    """Fewest conceded → most matches played (clean over more games) →
+    most goals scored."""
+    data = []
+    for t in Team.query.all():
+        mp = sum(1 for m in t.all_matches if m.played)
+        if mp == 0:
+            continue
+        data.append((t.total_goals_conceded, mp, t.total_goals_for, t))
+    if not data:
         return []
-    played.sort(key=lambda x: x[0])
-    min_conceded = played[0][0]
-    return [t for (c, t) in played if c == min_conceded]
+    data.sort(key=lambda x: (x[0], -x[1], -x[2]))
+    top = data[0][:3]
+    return [d[-1] for d in data if d[:3] == top]
 
 
 def _calc_golden_boot():
-    """Team that has scored the most goals across the tournament.
-    Tiebreak: fewest conceded."""
-    teams = [t for t in Team.query.all() if t.total_goals_for > 0]
-    if not teams:
+    """Most goals → fewest conceded → fewest matches (most clinical)."""
+    data = []
+    for t in Team.query.all():
+        if t.total_goals_for <= 0:
+            continue
+        mp = sum(1 for m in t.all_matches if m.played)
+        data.append((t.total_goals_for, t.total_goals_conceded, mp, t))
+    if not data:
         return []
-    teams.sort(key=lambda t: (-t.total_goals_for, t.total_goals_conceded))
-    top_gf = teams[0].total_goals_for
-    top_ga = teams[0].total_goals_conceded
-    return [t for t in teams
-            if t.total_goals_for == top_gf and t.total_goals_conceded == top_ga]
+    data.sort(key=lambda x: (-x[0], x[1], x[2]))
+    top = data[0][:3]
+    return [d[-1] for d in data if d[:3] == top]
 
 
 def _calc_penalty_kings():
-    teams = [(t.penalty_wins, t) for t in Team.query.all() if t.penalty_wins > 0]
-    if not teams:
+    """Most shootout wins → furthest progress (total points)."""
+    data = [(t.penalty_wins, t.total_points, t) for t in Team.query.all()
+            if t.penalty_wins > 0]
+    if not data:
         return []
-    teams.sort(key=lambda x: -x[0])
-    max_wins = teams[0][0]
-    return [t for (w, t) in teams if w == max_wins]
+    data.sort(key=lambda x: (-x[0], -x[1]))
+    top = data[0][:2]
+    return [d[-1] for d in data if d[:2] == top]
 
 
 def _calc_plucky_underdog():
-    """Best team to be eliminated in the group stage — most group points,
-    tiebreak group goal difference then goals scored."""
-    teams = [t for t in Team.query.all() if t.eliminated_stage == "Group Stage"]
-    if not teams:
+    """Best group-stage casualty: most points → GD → goals scored →
+    fewest conceded."""
+    data = []
+    for t in Team.query.all():
+        if t.eliminated_stage != "Group Stage":
+            continue
+        gd = t.group_goals_for - t.group_goals_against
+        data.append((t.group_points, gd, t.group_goals_for,
+                     t.group_goals_against, t))
+    if not data:
         return []
-    teams.sort(key=lambda t: (-t.group_points,
-                              -(t.group_goals_for - t.group_goals_against),
-                              -t.group_goals_for))
-    best = teams[0]
-    bgd = best.group_goals_for - best.group_goals_against
-    return [t for t in teams
-            if t.group_points == best.group_points
-            and (t.group_goals_for - t.group_goals_against) == bgd
-            and t.group_goals_for == best.group_goals_for]
+    data.sort(key=lambda x: (-x[0], -x[1], -x[2], x[3]))
+    top = data[0][:4]
+    return [d[-1] for d in data if d[:4] == top]
 
 
 def _calc_draw_specialists():
-    """Team with the most drawn matches across the tournament."""
-    counts = [(t.draws, t) for t in Team.query.all() if t.draws > 0]
-    if not counts:
+    """Most draws → fewest matches (higher draw rate) → more goals in those
+    draws (more entertaining)."""
+    data = []
+    for t in Team.query.all():
+        if t.draws <= 0:
+            continue
+        mp = goals_in_draws = 0
+        for m in t.all_matches:
+            if not m.played:
+                continue
+            mp += 1
+            if m.home_score == m.away_score:
+                goals_in_draws += m.home_score + m.away_score
+        data.append((t.draws, mp, goals_in_draws, t))
+    if not data:
         return []
-    counts.sort(key=lambda x: -x[0])
-    top = counts[0][0]
-    return [t for (d, t) in counts if d == top]
+    data.sort(key=lambda x: (-x[0], x[1], -x[2]))
+    top = data[0][:3]
+    return [d[-1] for d in data if d[:3] == top]
 
 
 def _calc_sieve():
-    """Team that concedes the most goals overall. Tiebreak: fewest scored."""
-    teams = [t for t in Team.query.all()
-             if any(m.played for m in t.all_matches) and t.total_goals_conceded > 0]
-    if not teams:
+    """Most conceded → fewest scored → fewest matches (leakier per game)."""
+    data = []
+    for t in Team.query.all():
+        mp = sum(1 for m in t.all_matches if m.played)
+        if mp == 0 or t.total_goals_conceded <= 0:
+            continue
+        data.append((t.total_goals_conceded, t.total_goals_for, mp, t))
+    if not data:
         return []
-    teams.sort(key=lambda t: (-t.total_goals_conceded, t.total_goals_for))
-    top_c = teams[0].total_goals_conceded
-    top_f = teams[0].total_goals_for
-    return [t for t in teams
-            if t.total_goals_conceded == top_c and t.total_goals_for == top_f]
+    data.sort(key=lambda x: (-x[0], x[1], x[2]))
+    top = data[0][:3]
+    return [d[-1] for d in data if d[:3] == top]
 
 
 def _calc_comeback_kings():
-    """Most wins from a losing HT position across the tournament."""
-    counts = {}
+    """Most wins from a losing HT position → biggest HT deficit overturned
+    in a single game."""
+    stats = {}  # team_id -> [count, max_deficit, team]
     for m in Match.query.filter(
         Match.home_ht_score.isnot(None),
         Match.home_score.isnot(None),
     ).all():
         # Home team comeback
         if m.home_ht_score < m.away_ht_score and m.home_score > m.away_score:
-            counts[m.home_team_id] = counts.get(m.home_team_id, 0) + 1
+            s = stats.setdefault(m.home_team_id, [0, 0, m.home_team])
+            s[0] += 1
+            s[1] = max(s[1], m.away_ht_score - m.home_ht_score)
         # Away team comeback
         if m.away_ht_score < m.home_ht_score and m.away_score > m.home_score:
-            counts[m.away_team_id] = counts.get(m.away_team_id, 0) + 1
-    if not counts:
+            s = stats.setdefault(m.away_team_id, [0, 0, m.away_team])
+            s[0] += 1
+            s[1] = max(s[1], m.home_ht_score - m.away_ht_score)
+    if not stats:
         return []
-    best = max(counts.values())
-    return Team.query.filter(Team.id.in_(
-        [tid for tid, c in counts.items() if c == best]
-    )).all()
+    ranked = sorted(stats.values(), key=lambda v: (-v[0], -v[1]))
+    top = (ranked[0][0], ranked[0][1])
+    return [v[2] for v in ranked if (v[0], v[1]) == top]
 
 
 def _calc_fairest():
-    """Team with the fewest card points (opposite of Dirtiest). Tiebreak: fewer yellows."""
-    teams = [t for t in Team.query.all() if any(m.cards_synced for m in t.all_matches)]
-    if not teams:
+    """Fewest card points → fewest reds → most matches played (stayed clean
+    longest) → most goals scored."""
+    data = []
+    for t in Team.query.all():
+        if not any(m.cards_synced for m in t.all_matches):
+            continue
+        mp = sum(1 for m in t.all_matches if m.played)
+        data.append((t.total_card_points, t.total_reds, mp, t.total_goals_for, t))
+    if not data:
         return []
-    ranked = sorted(teams, key=lambda t: (t.total_card_points, t.total_reds))
-    if not ranked:
-        return []
-    best_pts = ranked[0].total_card_points
-    best_reds = ranked[0].total_reds
-    return [t for t in ranked if t.total_card_points == best_pts and t.total_reds == best_reds]
+    data.sort(key=lambda x: (x[0], x[1], -x[2], -x[3]))
+    top = data[0][:4]
+    return [d[-1] for d in data if d[:4] == top]
 
 
 FUN_CALCS = {
@@ -234,13 +275,24 @@ def get_fun_leaders(category):
 
 
 def get_fun_prizes_by_participant():
-    """Returns dict of participant_id → total fun prizes earned."""
+    """Returns dict of participant_id → total fun prizes earned.
+
+    A category prize is split equally between the teams that tie for it, and
+    each team's share is split again between that team's owners — so an
+    unbroken tie never over-allocates the pot."""
     prizes = {}
     for cat in FunCategory.query.order_by(FunCategory.sort_order).all():
         teams, _ = get_fun_leaders(cat)
+        if not teams:
+            continue
+        team_share = cat.prize / len(teams)
         for team in teams:
-            for a in team.assignments:
-                prizes[a.participant_id] = prizes.get(a.participant_id, 0) + cat.prize
+            owners = team.assignments
+            if not owners:
+                continue
+            per_owner = team_share / len(owners)
+            for a in owners:
+                prizes[a.participant_id] = prizes.get(a.participant_id, 0) + per_owner
     return prizes
 
 
